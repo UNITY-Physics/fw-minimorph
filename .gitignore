@@ -1,0 +1,18 @@
+# Python stuff
+__pycache__
+
+# Mac stuff
+.DS_Store
+
+# Editor specific stuff
+.vscode
+.idea/
+
+# Confidential
+config.json
+ants-segmentation-0.0.1-66213f013771258f3fcbc082
+license.txt
+
+# large project files
+app/templates
+

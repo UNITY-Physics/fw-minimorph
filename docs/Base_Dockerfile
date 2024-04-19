@@ -1,0 +1,44 @@
+FROM flywheel/fw-gear-ants-base:2.3.5 as base
+
+ENV HOME=/root/
+ENV FLYWHEEL="/flywheel/v0"
+WORKDIR $FLYWHEEL
+RUN mkdir -p $FLYWHEEL/input
+
+# Installing the current project (most likely to change, above layer can be cached)
+COPY ./ $FLYWHEEL/
+
+# Dev dpendencies
+RUN apt-get update && apt-get install --no-install-recommends -y software-properties-common=0.96.20.2-2 && \
+    apt-get clean && \
+    apt-get update && apt-get install jq -y && \
+    pip install --no-cache-dir "poetry==1.1.11" && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# # Installing main dependencies
+# RUN poetry install --no-dev && \
+#     pip install --no-cache-dir -r $FLYWHEEL/requirements.txt
+
+# FreeSurfer setup
+ENV PATH=/freesurfer:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV FREESURFER_HOME=/freesurfer
+ENV PYTHONUSERBASE=/freesurfer/env
+
+
+# FSL setup
+#Install miniconda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+/bin/bash ~/miniconda.sh -b -p /opt/conda
+ENV CONDA_DIR /opt/conda
+# store the FSL public conda channel
+ENV FSL_CONDA_CHANNEL="https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public"
+# install tini into base conda environment
+RUN /opt/conda/bin/conda install -n base -c conda-forge tini -y
+RUN /opt/conda/bin/conda install -n base -c $FSL_CONDA_CHANNEL fsl-base fsl-utils fsl-avwutils -c conda-forge
+# set FSLDIR so FSL tools can use it, in this minimal case, the FSLDIR will be the root conda directory
+ENV PATH="/opt/conda/bin:${PATH}"
+ENV FSLDIR="/opt/conda"
+
+# Configure entrypoint
+ENTRYPOINT ["bash"] 
+# Flywheel reads the config command over this entrypoint
