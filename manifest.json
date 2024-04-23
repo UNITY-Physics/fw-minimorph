@@ -1,6 +1,6 @@
 {
-  "author": "Chiara Casella",
-  "cite": "",
+  "author": "Chiara Casella, Niall Bourke, Johnny o Muircheartaigh ",
+  "cite": "Sean C.L. Deoni, Muriel M.K. Bruchhage, Jennifer Beauchemin, Alexandra Volpe, Viren D'Sa, Matthew Huentelman, Steven C.R. Williams,Accessible pediatric neuroimaging using a low field strength MRI scanner, NeuroImage, Volume 238, 2021, 118273, ISSN 1053-8119, https://doi.org/10.1016/j.neuroimage.2021.118273. (https://www.sciencedirect.com/science/article/pii/S1053811921005498);",
   "command": "python3 /flywheel/v0/run.py",
   "config": {
     "age": {
@@ -40,7 +40,7 @@
     },
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/ants-segmentation:0.0.2"
+      "image": "flywheel/ants-segmentation:0.0.9"
     },
     "kcl-app-binary": "app/main.sh",
     "kcl-app-modalities": [
@@ -110,5 +110,5 @@
   "name": "ants-segmentation",
   "source": "https://surfer.nmr.mgh.harvard.edu/fswiki/Samseg",
   "url": "https://surfer.nmr.mgh.harvard.edu/fswiki/Samseg",
-  "version": "0.0.2"
+  "version": "0.0.9"
 }

@@ -1,26 +1,32 @@
 #!/bin/sh
 
 ```
-Module: For running the ANTs pipeline for segmenting infant brain images on Flywheel
-Author: Chiara Casella, Niall Bourke
-Date: 2021-04-19
+# Module: For running the ANTs pipeline for segmenting infant brain images on Flywheel
+# Author: Chiara Casella, Niall Bourke
+# Date: 2021-04-19
 
-Overview:
-This script is designed to run the ANTs pipeline for segmenting infant brain images on Flywheel. The pipeline consists of the following steps:
-1. Register the input image to a template image
-2. Apply the registration to the input image
-3. Segment the input image in template space using ANTs Atropos
-4. Move the segmentations back to native space
+# Overview:
+# This script is designed to run the ANTs pipeline for segmenting infant brain images on Flywheel. The pipeline consists of the following steps:
+# 1. Register the input image to a template image
+# 2. Apply the registration to the input image
+# 3. Segment the input image in template space using ANTs Atropos
+# 4. Move the segmentations back to native space
 
-Usage:
-This script is designed to be run as a Flywheel Gear. The script takes two inputs:
-1. The input image to segment
-2. The age of the template to use in months (e.g. 3, 6, 12, 24, 48, 72)
+# Usage:
+# This script is designed to be run as a Flywheel Gear. The script takes two inputs:
+# 1. The input image to segment
+# 2. The age of the template to use in months (e.g. 3, 6, 12, 24, 48, 72)
 
-The script assumes that the input image is in NIfTI format. The script outputs the segmentations in native space.
+# The script assumes that the input image is in NIfTI format. The script outputs the segmentations in native space.
 
+
+# NOTE:
+# Need txt output of volumes
+# clean up intermediate files
+# slicer bet & segmentations in native space (-A)
 
 ```
+
 # Initialise the FSL environment
 . ${FSLDIR}/etc/fslconf/fsl.sh
 
@@ -34,11 +40,10 @@ age=$2
 # Define the paths
 FLYWHEEL_BASE=/flywheel/v0
 INPUT_DIR=$FLYWHEEL_BASE/input/
-WORK_DIR=$FLYWHEEL_BASE/work
+OUTPUT_DIR=$FLYWHEEL_BASE/work
 OUTPUT_DIR=$FLYWHEEL_BASE/output
 TEMPLATE_DIR=$FLYWHEEL_BASE/app/templates/${age}/
 CONTAINER='[flywheel/ants-segmentation]'
-
 template=${TEMPLATE_DIR}/template_${age}_degibbs.nii.gz
 
 ##############################################################################
@@ -67,52 +72,66 @@ fi
 # --- Step 1: Register image to template --- #
 
 # Define outputs in the following steps
-native_bet_image=${WORK_DIR}/native_bet_image.nii.gz
-native_brain_mask=${WORK_DIR}/native_brain_mask.nii.gz
-template_brain_mask=${WORK_DIR}/brainMask_dil.nii.gz
+native_bet_image=${OUTPUT_DIR}/native_bet_image.nii.gz
+native_brain_mask=${OUTPUT_DIR}/native_brain_mask.nii.gz
+template_brain_mask=${OUTPUT_DIR}/brainMask_dil.nii.gz
 
 #bet image to help with registration to template
-mri_synthstrip -i ${input_file} -o ${WORK_DIR}/native_bet_image.nii.gz -m ${WORK_DIR}/native_brain_mask.nii.gz
+# mri_synthstrip -i ${input_file} -o ${OUTPUT_DIR}/native_bet_image.nii.gz -m ${OUTPUT_DIR}/native_brain_mask.nii.gz
+bet ${input_file} ${native_bet_image}
+fslmaths ${native_bet_image} -bin ${native_brain_mask}
 
+echo "BET image and mask created"
+ls ${native_bet_image} ${native_brain_mask}
+echo "***"  
 # Dilate template brain mask
-fslmaths ${TEMPLATE_DIR}/brainMask.nii.gz -dilM ${WORK_DIR}/brainMask_dil.nii.gz
+echo "Dilating template brain mask"
+fslmaths ${TEMPLATE_DIR}/brainMask.nii.gz -dilM ${OUTPUT_DIR}/brainMask_dil.nii.gz
 
 # Register native BET image to template brain
-flirt -in ${native_bet_image} -ref ${template} -refweight ${template_brain_mask} -inweight ${native_brain_mask} -dof 12 -interp spline -omat flirt.mat -out flirt.nii
-c3d_affine_tool -ref ${template} -src ${native_bet_image} ${WORK_DIR}/flirt.mat -fsl2ras -oitk ${WORK_DIR}/itk.txt
-antsRegistrationSyN.sh -d 3 -i ${WORK_DIR}/itk.txt -t 'so' -f ${template} -m ${native_bet_image} -j 1 -o ${WORK_DIR}/bet_
-
+echo "Registering native BET image to template brain"
+flirt -in ${native_bet_image} -ref ${template} -refweight ${template_brain_mask} -inweight ${native_brain_mask} -dof 12 -interp spline -omat ${OUTPUT_DIR}/flirt.mat -out ${OUTPUT_DIR}/flirt.nii
+echo "flirt done"
+ls ${OUTPUT_DIR}/flirt.mat ${OUTPUT_DIR}/flirt.nii
+echo "***"
+/flywheel/v0/utils/c3d-1.1.0/bin/c3d_affine_tool -ref ${template} -src ${native_bet_image} ${OUTPUT_DIR}/flirt.mat -fsl2ras -oitk ${OUTPUT_DIR}/itk.txt
+echo "c3d_affine_tool done"
+ls ${OUTPUT_DIR}/itk.txt
+echo "***"
+# Run SyN registration
+antsRegistrationSyN.sh -d 3 -i ${OUTPUT_DIR}/itk.txt -t 'so' -f ${template} -m ${native_bet_image} -j 1 -o ${OUTPUT_DIR}/bet_
 
 # --- Step 2: Apply registration to non-betted image --- #
 
 # Get the affine and warp files from the registration
-AFFINE_TRANSFORM=$(ls ${WORK_DIR}/*0GenericAffine.mat)
-WARP=$(ls ${WORK_DIR}/*1Warp.nii.gz)
-INVERSE_WARP=$(ls ${WORK_DIR}/*1InverseWarp.nii.gz)
+AFFINE_TRANSFORM=$(ls ${OUTPUT_DIR}/*0GenericAffine.mat)
+WARP=$(ls ${OUTPUT_DIR}/*1Warp.nii.gz)
+INVERSE_WARP=$(ls ${OUTPUT_DIR}/*1InverseWarp.nii.gz)
 
 # Transform raw input image to template space using the affine warp
-antsApplyTransforms -d 3 -i ${input_file} -r ${template} -o ${WORK_DIR}/warped_to_template.nii.gz -t "$WARP" -t "$AFFINE_TRANSFORM"
+echo "Transforming raw input image to template space"
+antsApplyTransforms -d 3 -i ${input_file} -r ${template} -o ${OUTPUT_DIR}/warped_to_template.nii.gz -t "$WARP" -t "$AFFINE_TRANSFORM"
 
 #Multiply by template mask
-fslmaths ${WORK_DIR}/warped_to_template.nii.gz -mul ${template_brain_mask} ${WORK_DIR}/img_for_segmentation
-
+fslmaths ${OUTPUT_DIR}/warped_to_template.nii.gz -mul ${template_brain_mask} ${OUTPUT_DIR}/img_for_segmentation
 
 # --- Step 3: Segment image in template space with antsAtropos (3 priors) --- 
-
+echo "Segmenting image in template space with Atropos"
 # Select the image to segment
-img=${WORK_DIR}/img_for_segmentation
+img=${OUTPUT_DIR}/img_for_segmentation
 img="${img%.nii.gz}"
 
 # Run Atropos
-antsAtroposN4.sh -d 3 -a ${img}.nii.gz -x ${TEMPLATE_DIR}/brainMask.nii.gz -p ${TEMPLATE_DIR}/prior%d.nii.gz -c 3 -y 1 -y 2 -y 3 -w 0.6 -o ${WORK_DIR}/${img}_ants_atropos_
+antsAtroposN4.sh -d 3 -a ${img}.nii.gz -x ${TEMPLATE_DIR}/brainMask.nii.gz -p ${TEMPLATE_DIR}/prior%d.nii.gz -c 3 -y 1 -y 2 -y 3 -w 0.6 -o ${OUTPUT_DIR}/${img}_ants_atropos_
 
-# --- Step 4: Move segmentations to native space --- #
+# # --- Step 4: Move segmentations to native space --- #
 
 # For each posterior, move the segmentation to native space using the inverse warp and affine transform
+echo "Moving segmentations to native space"
 for posterior in 1 2 3; do
-    for FILE in $(ls ${WORK_DIR}/${img}_ants_atropos_SegmentationPosteriors${posterior}.nii.gz); do
+    for FILE in $(ls ${img}_ants_atropos_SegmentationPosteriors${posterior}.nii.gz); do
         echo "${FILE}"
-	    native_img=$input_file
+	      native_img=`basename $input_file`
         native_img="${native_img%.nii.gz}"
         REF_FILE=$(ls ${img}.nii.gz)
 
@@ -120,9 +139,24 @@ for posterior in 1 2 3; do
     done      
 done
 
+slicer ${native_bet_image} ${native_bet_image} -a ${OUTPUT_DIR}/slicer_bet.png
+slicer ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors1.nii.gz ${input_file} -a ${OUTPUT_DIR}/slicer_seg1.png
+slicer ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors2.nii.gz ${input_file} -a ${OUTPUT_DIR}/slicer_seg2.png
+slicer ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors3.nii.gz ${input_file} -a ${OUTPUT_DIR}/slicer_seg3.png
+# convert ${OUTPUT_DIR}/slicer_bet.png ${OUTPUT_DIR}/slicer_seg1.png ${OUTPUT_DIR}/slicer_seg2.png ${OUTPUT_DIR}/slicer_seg3.png ${OUTPUT_DIR}/montage.png
+pngappend ${OUTPUT_DIR}/slicer_bet.png - ${OUTPUT_DIR}/slicer_seg1.png - ${OUTPUT_DIR}/slicer_seg2.png - ${OUTPUT_DIR}/slicer_seg3.png ${OUTPUT_DIR}/montage.png
 
+# Extract volumes of segmentations
+fslstats ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors1.nii.gz -k ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors1.nii.gz -V > ${OUTPUT_DIR}/volume_seg1.csv
+fslstats ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors2.nii.gz -k ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors2.nii.gz -V > ${OUTPUT_DIR}/volume_seg2.csv
+fslstats ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors3.nii.gz -k ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors3.nii.gz -V > ${OUTPUT_DIR}/volume_seg3.csv 
 
-
+# --- Step 5: Handle exit status --- #
+# Check if the output directory is empty
+if [ -z "$(find "$OUTPUT_DIR" -mindepth 1 -print -quit 2>/dev/null)" ]; then
+    echo "Error: Output directory is empty"
+    exit 1
+fi
 
 
 

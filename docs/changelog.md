@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.9
+```
+NJB: 23/04/2024
+- Added in volume calculations
+- Added in slicer for visualisation
+
+NOTE: Pushes everything to output directory for now since there seems to be an issue with work directory. 
+
+```
 ## 0.0.2
 ```
 NJB: 19/04/2024

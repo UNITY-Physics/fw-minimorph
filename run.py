@@ -8,6 +8,8 @@ from flywheel_gear_toolkit import GearToolkitContext
 from utils.parser import parse_config
 from utils.command_line import exec_command
 from utils.gatherDemographics import get_demo
+from utils.build_csv import get_demo
+
 # from utils.parseOutput import parseOutput
 
 # The gear is split up into 2 main components. The run.py file which is executed
@@ -27,6 +29,10 @@ def main(context: GearToolkitContext) -> None:
     command = f"{command} {input_path} {age}"
     # Execute the command
     exec_command(command, shell=True, cont_output=True)
+
+    # Add demographic data to the output
+    print("concatenating demographics...")
+    get_demo()
 
 # Only execute if file is run as main, not when imported by another module
 if __name__ == "__main__":  # pragma: no cover
