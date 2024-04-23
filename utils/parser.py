@@ -2,6 +2,7 @@
 
 from typing import Tuple
 from flywheel_gear_toolkit import GearToolkitContext
+import sys
 
 def parse_config(
     gear_context: GearToolkitContext,
@@ -21,7 +22,9 @@ def parse_config(
     age = gear_context.config.get("age")
 
     if age is None:
-        raise ValueError("Template is required")
+        raise ValueError("Age is required")
+        sys.exit(1)
+    
     # TO DO: Add in parser to look for age where possible
 
     return input, age

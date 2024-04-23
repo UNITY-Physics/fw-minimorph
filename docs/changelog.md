@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3
+```
+NJB: 23/04/2024
+- Added catch if age is not provided
+- ls path permissions to debug work dir issue
+```
+
 ## 0.0.9
 ```
 NJB: 23/04/2024

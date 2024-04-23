@@ -46,6 +46,9 @@ TEMPLATE_DIR=$FLYWHEEL_BASE/app/templates/${age}/
 CONTAINER='[flywheel/ants-segmentation]'
 template=${TEMPLATE_DIR}/template_${age}_degibbs.nii.gz
 
+echo "permissions"
+ls -ltra /flywheel/v0/
+
 ##############################################################################
 # Handle INPUT file
 # Check that input file exists

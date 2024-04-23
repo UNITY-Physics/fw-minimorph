@@ -95,9 +95,9 @@ def get_demo():
 
 
     # Parse the segmentation outputs to combine them into a single csv file
-    volume_seg1 = "/flywheel/v0/work/volume_seg1.csv"
-    volume_seg2 = "/flywheel/v0/work/volume_seg2.csv"
-    volume_seg3 = "/flywheel/v0/work/volume_seg3.csv"
+    volume_seg1 = "/flywheel/v0/output/volume_seg1.csv"
+    volume_seg2 = "/flywheel/v0/output/volume_seg2.csv"
+    volume_seg3 = "/flywheel/v0/output/volume_seg3.csv"
 
     vols1 = pd.read_csv(volume_seg1, delimiter='\t', header=None) 
     csf = vols1.iloc[0, 0].split()[0]
