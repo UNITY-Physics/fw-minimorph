@@ -104,15 +104,11 @@ echo "***"
 echo "c3d_affine_tool done"
 ls ${WORK_DIR}/itk.txt
 echo "***"
+# Run SyN registration
+antsRegistrationSyN.sh -d 3 -i ${OUTPUT_DIR}/itk.txt -t 'so' -f ${template} -m ${native_bet_image} -j 1 -o ${OUTPUT_DIR}/bet_
 
-echo -e "\n Run SyN registration"
-antsRegistrationSyN.sh -d 3 -i ${WORK_DIR}/itk.txt -t 'so' -f ${template} -m ${native_bet_image} -j 1 -o ${WORK_DIR}/bet_ -n 6
-echo "antsRegistrationSyN done"
+# --- Step 2: Apply registration to non-betted image --- #
 
-# Short pause of 3 seconds
-sleep 3
-
-echo -e "\n --- Step 2: Apply registration to non-betted image --- "
 # Get the affine and warp files from the registration
 AFFINE_TRANSFORM=$(ls ${WORK_DIR}/*0GenericAffine.mat)
 WARP=$(ls ${WORK_DIR}/*1Warp.nii.gz)
