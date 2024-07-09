@@ -126,6 +126,8 @@ img=${OUTPUT_DIR}/img_for_segmentation
 
 # Run Atropos
 antsAtroposN4.sh -d 3 -a ${img}.nii.gz -x ${TEMPLATE_DIR}/brainMask.nii.gz -p ${TEMPLATE_DIR}/prior%d.nii.gz -c 3 -y 1 -y 2 -y 3 -w 0.6 -o ${OUTPUT_DIR}/${img}_ants_atropos_
+# 4 tissue prior Chiara wants to use
+# antsAtroposN4.sh -d 3 -a ${img}.nii.gz -x ${TEMPLATE_DIR}/brainMask.nii.gz -p ${TEMPLATE_DIR}/prior%d.nii.gz -c 4 -y 1 -y 2 -y 3 -y 4 -w 0.6 -o ${OUTPUT_DIR}/${img}_ants_atropos_
 
 # # --- Step 4: Move segmentations to native space --- #
 
