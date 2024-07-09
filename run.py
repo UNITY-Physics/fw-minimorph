@@ -32,7 +32,7 @@ def main(context: GearToolkitContext) -> None:
 
     # Add demographic data to the output
     print("concatenating demographics...")
-    get_demo()
+    get_demo(context)
 
 # Only execute if file is run as main, not when imported by another module
 if __name__ == "__main__":  # pragma: no cover

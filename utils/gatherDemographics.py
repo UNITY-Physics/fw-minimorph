@@ -7,7 +7,7 @@ import re
 #  Module to identify the correct template use for the subject VBM analysis based on age at scan
 #  Need to get subject identifiers from inside running container in order to find the correct template from the SDK
 
-def get_demo():
+def get_demo(context):
 
     data = []
     # Read config.json file
@@ -20,19 +20,35 @@ def get_demo():
     gear = 'synthseg'
     
     # Get the input file id
-    input_file_id = (config['inputs']['input']['hierarchy']['id'])
-    print("input_file_id is : ", input_file_id)
-    input_container = fw.get(input_file_id)
+    # input_file_id = (config['inputs']['input']['hierarchy']['id'])
+    # print("input_file_id is : ", input_file_id)
+    # input_container = fw.get(input_file_id)
+
+    input_container = context.client.get_analysis(context.destination["id"])
+
+    # Get the subject id from the session id
+    # & extract the subject container
+    subject_id = input_container.parents['subject']
+    subject_container = context.client.get(subject_id)
+    subject = subject_container.reload()
+    print("subject label: ", subject.label)
+    subject_label = subject.label
 
     # Get the session id from the input file id
     # & extract the session container
     session_id = input_container.parents['session']
-    session_container = fw.get(session_id)
+    session_container = context.client.get(session_id)
     session = session_container.reload()
-    print("subject label: ", session.subject.label)
-    print("session label: ", session.label)
     session_label = session.label
-    subject_label = session.subject.label
+    print("session label: ", session.label)
+
+    # session_id = input_container.parents['session']
+    # session_container = fw.get(session_id)
+    # session = session_container.reload()
+    # print("subject label: ", session.subject.label)
+    # print("session label: ", session.label)
+    # session_label = session.label
+    # subject_label = session.subject.label
 
     # -------------------  Get the subject age & matching template  -------------------  #
 

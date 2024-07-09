@@ -14,8 +14,8 @@ RUN mkdir -p $FLYWHEEL/work
 # Installing the current project
 COPY ./ $FLYWHEEL/
 
-RUN pip install flywheel-gear-toolkit && \
-    pip install flywheel-sdk
+RUN pip3 install flywheel-gear-toolkit && \
+    pip3 install --upgrade flywheel-sdk
 
 # Configure entrypoint
 RUN bash -c 'chmod +rx $FLYWHEEL/run.py' && \
