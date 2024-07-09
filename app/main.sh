@@ -105,7 +105,7 @@ echo "c3d_affine_tool done"
 ls ${WORK_DIR}/itk.txt
 echo "***"
 # Run SyN registration
-antsRegistrationSyN.sh -d 3 -i ${OUTPUT_DIR}/itk.txt -t 'so' -f ${template} -m ${native_bet_image} -j 1 -o ${OUTPUT_DIR}/bet_ -n 4
+antsRegistrationSyN.sh -d 3 -i ${WORK_DIR}/itk.txt -t 'so' -f ${template} -m ${native_bet_image} -j 1 -o ${OUTPUT_DIR}/bet_ -n 4
 
 # --- Step 2: Apply registration to non-betted image --- #
 
@@ -135,7 +135,6 @@ antsAtroposN4.sh -d 3 -a ${img}.nii.gz -x ${TEMPLATE_DIR}/brainMask.nii.gz -p ${
 # antsAtroposN4.sh -d 3 -a ${img}.nii.gz -x ${TEMPLATE_DIR}/brainMask.nii.gz -p ${TEMPLATE_DIR}/prior%d.nii.gz -c 4 -y 1 -y 2 -y 3 -y 4 -w 0.6 -o ${OUTPUT_DIR}/${img}_ants_atropos_
 
 echo -e "\n --- Step 4: Move segmentations to native space --- "
-
 # For each posterior, move the segmentation to native space using the inverse warp and affine transform
 echo "Moving segmentations to native space"
 
@@ -149,6 +148,9 @@ for posterior in 1 2 3; do
         antsApplyTransforms -d 3 -i $FILE -r $input_file -o ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors${posterior}.nii.gz -t ["$AFFINE_TRANSFORM",1] -t $INVERSE_WARP
     done      
 done
+
+# Short pause of 3 seconds
+sleep 3
 
 echo -e "\n --- Step 5: Run slicer and extract volume estimation from segmentations --- "
 slicer ${native_bet_image} ${native_bet_image} -a ${WORK_DIR}/slicer_bet.png
