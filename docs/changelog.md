@@ -1,5 +1,11 @@
 # Changelog
 
+09/07/2024
+Version 0.1.7
+- Functioning version of the script, with cleaned up outputs and comments
+- Requires testing on Flywheel & sanity checks
+- Note: feature requests for additional tissue classes
+
 ## 0.1.3
 ```
 NJB: 23/04/2024

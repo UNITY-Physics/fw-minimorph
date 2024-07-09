@@ -111,12 +111,12 @@ def get_demo():
     data = [{'subject': subject_label, 'session': session_label,  'csf': csf, 'extraAxial': extraAxial, 'tissue': tissue}]  
     data_df = pd.DataFrame(data)
 
-    # smush the data together
-    frames = [demo, data_df]
-    df = pd.concat(frames, axis=1)
+    # # smush the data together
+    # frames = [demo, data_df]
+    # df = pd.concat(frames, axis=1)
 
     outdir = ('/flywheel/v0/output/ants-segmentation_volumes.csv')
-    df.to_csv(outdir)
+    data_df.to_csv(outdir)
 
     print("Demographics: ", subject_label, session_label, age, PatientSex)
     return subject_label, session_label, age, PatientSex
