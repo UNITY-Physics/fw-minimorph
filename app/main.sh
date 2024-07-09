@@ -105,7 +105,7 @@ echo "c3d_affine_tool done"
 ls ${WORK_DIR}/itk.txt
 echo "***"
 # Run SyN registration
-antsRegistrationSyN.sh -d 3 -i ${OUTPUT_DIR}/itk.txt -t 'so' -f ${template} -m ${native_bet_image} -j 1 -o ${OUTPUT_DIR}/bet_
+antsRegistrationSyN.sh -d 3 -i ${OUTPUT_DIR}/itk.txt -t 'so' -f ${template} -m ${native_bet_image} -j 1 -o ${OUTPUT_DIR}/bet_ -n 4
 
 # --- Step 2: Apply registration to non-betted image --- #
 
