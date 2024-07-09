@@ -95,7 +95,7 @@ fslmaths ${TEMPLATE_DIR}/brainMask.nii.gz -dilM ${OUTPUT_DIR}/brainMask_dil.nii.
 echo "Registering native BET image to template brain"
 flirt -in ${native_bet_image} -ref ${template} -refweight ${template_brain_mask} -inweight ${native_brain_mask} -dof 12 -interp spline -omat ${OUTPUT_DIR}/flirt.mat -out ${OUTPUT_DIR}/flirt.nii
 echo "flirt done"
-ls ${OUTPUT_DIR}/flirt.mat ${OUTPUT_DIR}/flirt.nii
+ls ${OUTPUT_DIR}/flirt.mat
 echo "***"
 /flywheel/v0/utils/c3d-1.1.0/bin/c3d_affine_tool -ref ${template} -src ${native_bet_image} ${OUTPUT_DIR}/flirt.mat -fsl2ras -oitk ${OUTPUT_DIR}/itk.txt
 echo "c3d_affine_tool done"
@@ -122,7 +122,7 @@ fslmaths ${OUTPUT_DIR}/warped_to_template.nii.gz -mul ${template_brain_mask} ${O
 echo "Segmenting image in template space with Atropos"
 # Select the image to segment
 img=${OUTPUT_DIR}/img_for_segmentation
-img="${img%.nii.gz}"
+# img="${img%.nii.gz}"
 
 # Run Atropos
 antsAtroposN4.sh -d 3 -a ${img}.nii.gz -x ${TEMPLATE_DIR}/brainMask.nii.gz -p ${TEMPLATE_DIR}/prior%d.nii.gz -c 3 -y 1 -y 2 -y 3 -w 0.6 -o ${OUTPUT_DIR}/${img}_ants_atropos_
@@ -152,7 +152,7 @@ pngappend ${OUTPUT_DIR}/slicer_bet.png - ${OUTPUT_DIR}/slicer_seg1.png - ${OUTPU
 # Extract volumes of segmentations
 fslstats ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors1.nii.gz -k ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors1.nii.gz -V > ${OUTPUT_DIR}/volume_seg1.csv
 fslstats ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors2.nii.gz -k ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors2.nii.gz -V > ${OUTPUT_DIR}/volume_seg2.csv
-fslstats ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors3.nii.gz -k ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors3.nii.gz -V > ${OUTPUT_DIR}/volume_seg3.csv 
+fslstats ${OUTOUTPUT_DIRPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors3.nii.gz -k ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors3.nii.gz -V > ${OUTPUT_DIR}/volume_seg3.csv 
 
 # --- Step 5: Handle exit status --- #
 # Check if the output directory is empty

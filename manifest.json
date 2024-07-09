@@ -40,7 +40,7 @@
     },
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/ants-segmentation:0.1.3"
+      "image": "flywheel/ants-segmentation:0.1.6"
     },
     "kcl-app-binary": "app/main.sh",
     "kcl-app-modalities": [
@@ -110,5 +110,5 @@
   "name": "ants-segmentation",
   "source": "https://surfer.nmr.mgh.harvard.edu/fswiki/Samseg",
   "url": "https://surfer.nmr.mgh.harvard.edu/fswiki/Samseg",
-  "version": "0.1.3"
+  "version": "0.1.6"
 }

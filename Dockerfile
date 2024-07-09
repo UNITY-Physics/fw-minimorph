@@ -10,6 +10,7 @@ ENV HOME=/root/
 ENV FLYWHEEL="/flywheel/v0"
 WORKDIR $FLYWHEEL
 RUN mkdir -p $FLYWHEEL/input
+RUN mkdir -p $FLYWHEEL/work
 # Installing the current project
 COPY ./ $FLYWHEEL/
 
@@ -18,6 +19,7 @@ RUN pip install flywheel-gear-toolkit && \
 
 # Configure entrypoint
 RUN bash -c 'chmod +rx $FLYWHEEL/run.py' && \
-    bash -c 'chmod +rx $FLYWHEEL/app/'
+    bash -c 'chmod +rx $FLYWHEEL/app/' 
+    
 ENTRYPOINT ["python3","/flywheel/v0/main.sh"] 
 # Flywheel reads the config command over this entrypoint

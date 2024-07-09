@@ -6,11 +6,11 @@
 # Assumes that API_KEY is set in the environment and added to config.json.
 
 GEAR=fw-ants-segmentation
-IMAGE=flywheel/ants-segmentation:0.0.7
-LOG=ants-segmentation-0.0.7-6627713a0aa9007ce358c884
+IMAGE=flywheel/ants-segmentation:0.1.5
+LOG=ants-segmentation-0.1.5-662b9ff01b63a109b0cb9a40
 
 # Command:
-docker run -it --rm --entrypoint bash\
+docker run -it --cpus 6.0 --rm --entrypoint bash\
 	-v /Users/nbourke/GD/atom/unity/fw-gears/${GEAR}/app/:/flywheel/v0/app\
 	-v /Users/nbourke/GD/atom/unity/fw-gears/${GEAR}/utils:/flywheel/v0/utils\
 	-v /Users/nbourke/GD/atom/unity/fw-gears/${GEAR}/run.py:/flywheel/v0/run.py\

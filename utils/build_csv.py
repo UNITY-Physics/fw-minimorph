@@ -18,7 +18,6 @@ def get_demo():
     # Read API key in config file
     api_key = (config['inputs']['api-key']['key'])
     fw = flywheel.Client(api_key=api_key)
-    gear = 'synthseg'
     
     # Get the input file id
     input_file_id = (config['inputs']['input']['hierarchy']['id'])
@@ -45,7 +44,7 @@ def get_demo():
     for acq in session_container.acquisitions.iter():
         # print(acq.label)
         acq = acq.reload()
-        if 'T2' in acq.label and 'AXI' in acq.label and 'Segmentation' not in acq.label: 
+        if 'T2' in acq.label and 'AXI' in acq.label and 'Segmentation' not in acq.label and 'Align' not in acq.label: 
             for file_obj in acq.files: # get the files in the acquisition
                 # Screen file object information & download the desired file
                 if file_obj['type'] == 'dicom':
@@ -95,9 +94,9 @@ def get_demo():
 
 
     # Parse the segmentation outputs to combine them into a single csv file
-    volume_seg1 = "/flywheel/v0/output/volume_seg1.csv"
-    volume_seg2 = "/flywheel/v0/output/volume_seg2.csv"
-    volume_seg3 = "/flywheel/v0/output/volume_seg3.csv"
+    volume_seg1 = "/flywheel/v0/work/volume_seg1.csv"
+    volume_seg2 = "/flywheel/v0/work/volume_seg2.csv"
+    volume_seg3 = "/flywheel/v0/work/volume_seg3.csv"
 
     vols1 = pd.read_csv(volume_seg1, delimiter='\t', header=None) 
     csf = vols1.iloc[0, 0].split()[0]
