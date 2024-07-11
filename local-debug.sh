@@ -6,8 +6,8 @@
 # Assumes that API_KEY is set in the environment and added to config.json.
 
 GEAR=fw-ants-segmentation
-IMAGE=flywheel/ants-segmentation:0.1.6
-LOG=ants-segmentation-0.1.6-662fb5473771258f3fcc02dc
+IMAGE=flywheel/ants-segmentation:0.1.9
+LOG=ants-segmentation-0.1.9-668dd60924ed280d35c4b00f
 
 # Command:
 docker run -it --cpus 6.0 --rm --entrypoint bash\

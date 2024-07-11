@@ -79,9 +79,9 @@ fi
 echo -e "\n --- Step 1: Register image to template --- "
 
 # Define outputs in the following steps
-native_bet_image=${OUTPUT_DIR}/native_bet_image.nii.gz
-native_brain_mask=${OUTPUT_DIR}/native_brain_mask.nii.gz
-template_brain_mask=${OUTPUT_DIR}/brainMask_dil.nii.gz
+native_bet_image=${WORK_DIR}/native_bet_image.nii.gz
+native_brain_mask=${WORK_DIR}/native_brain_mask.nii.gz
+template_brain_mask=${WORK_DIR}/brainMask_dil.nii.gz
 
 #bet image to help with registration to template
 # mri_synthstrip -i ${input_file} -o ${OUTPUT_DIR}/native_bet_image.nii.gz -m ${OUTPUT_DIR}/native_brain_mask.nii.gz
@@ -92,7 +92,7 @@ ls ${native_bet_image} ${native_brain_mask}
 echo "***"  
 # Dilate template brain mask
 echo "Dilating template brain mask"
-fslmaths ${TEMPLATE_DIR}/brainMask.nii.gz -dilM ${OUTPUT_DIR}/brainMask_dil.nii.gz
+fslmaths ${TEMPLATE_DIR}/brainMask.nii.gz -dilM ${WORK_DIR}/brainMask_dil.nii.gz
 
 # Register native BET image to template brain
 echo "Registering native BET image to template brain"
@@ -105,7 +105,7 @@ echo "c3d_affine_tool done"
 ls ${WORK_DIR}/itk.txt
 echo "***"
 # Run SyN registration
-antsRegistrationSyN.sh -d 3 -i ${WORK_DIR}/itk.txt -t 'so' -f ${template} -m ${native_bet_image} -j 1 -o ${OUTPUT_DIR}/bet_ -n 4
+antsRegistrationSyN.sh -d 3 -i ${WORK_DIR}/itk.txt -t 'so' -f ${template} -m ${native_bet_image} -j 1 -o ${WORK_DIR}/bet_ -n 4
 
 # --- Step 2: Apply registration to non-betted image --- #
 
