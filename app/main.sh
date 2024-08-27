@@ -1,16 +1,16 @@
 #!/bin/sh
 
 ```
-# Module: For running the ANTs pipeline for segmenting infant brain images on Flywheel
+# Module: Pipeline for segmenting infant brain images on Flywheel
 # Author: Chiara Casella, Niall Bourke
 
 
 # Overview:
-# This script is designed to run the ANTs pipeline for segmenting infant brain images on Flywheel. The pipeline consists of the following steps:
-# 1. Register the input image to a template image
-# 2. Apply the registration to the input image
-# 3. Segment the input image in template space using ANTs Atropos
-# 4. Move the segmentations back to native space
+# This script is designed to segment infant brain images on Flywheel. The pipeline consists of the following steps:
+# 1. Register the input image to an age-specific template image
+# 2. Apply the resulting transformations to predefined segmentation priors and segmentation masks (template space), to bring them into the subject's native space
+# 3. Segment the input image in native space using ANTs Atropos, with three priors (tissue, CSF, skull)
+# 4. Refine the resulting segmentation posteriors to separate the ventricles from the remaining CSF, and the subcortical grey matter areas from the rest of the tissue
 # 5. Extract volume estimates from the segmentations
 
 
@@ -22,18 +22,15 @@
 # The script assumes that the input image is in NIfTI format. The script outputs the segmentations in native space.
 
 
-# NOTE:
-# Need txt output of volumes
-# clean up intermediate files
-# slicer bet & segmentations in native space (-A)
+# NOTES:
+# Need txt output of volumes - I have added commands to extract volumes
+# clean up intermediate files - I have saved final files to $OUTPUT_DIR, and intermediate files to $WORK_DIR
+# slicer bet & segmentations in native space (-A) - added these too
 
 ```
 
 # Initialise the FSL environment
 . ${FSLDIR}/etc/fslconf/fsl.sh
-
-# Add c3d to the path
-export PATH=$PATH:/flywheel/v0/utils/c3d-1.1.0/bin/c3d_affine_tool
 
 #Define inputs
 input_file=$1
@@ -81,88 +78,128 @@ echo -e "\n --- Step 1: Register image to template --- "
 # Define outputs in the following steps
 native_bet_image=${WORK_DIR}/native_bet_image.nii.gz
 native_brain_mask=${WORK_DIR}/native_brain_mask.nii.gz
-template_brain_mask=${WORK_DIR}/brainMask_dil.nii.gz
 
 #bet image to help with registration to template
-# mri_synthstrip -i ${input_file} -o ${OUTPUT_DIR}/native_bet_image.nii.gz -m ${OUTPUT_DIR}/native_brain_mask.nii.gz
-bet ${input_file} ${native_bet_image}
-fslmaths ${native_bet_image} -bin ${native_brain_mask}
+mri_synthstrip -i ${input_file} -o ${native_bet_image} -m ${native_brain_mask} -b 4
 echo "BET image and mask created"
 ls ${native_bet_image} ${native_brain_mask}
 echo "***"  
-# Dilate template brain mask
-echo "Dilating template brain mask"
-fslmaths ${TEMPLATE_DIR}/brainMask.nii.gz -dilM ${WORK_DIR}/brainMask_dil.nii.gz
 
 # Register native BET image to template brain
 echo "Registering native BET image to template brain"
-flirt -in ${native_bet_image} -ref ${template} -refweight ${template_brain_mask} -inweight ${native_brain_mask} -dof 12 -interp spline -omat ${WORK_DIR}/flirt.mat -out ${WORK_DIR}/flirt.nii
-echo "flirt done"
-ls ${WORK_DIR}/flirt.mat
+echo -e "\n Run SyN registration"
+ants antsRegistrationSyN.sh -d 3 -t 's' -f ${template} -m ${native_bet_image} -j 1 -p 'f' -o ${WORK_DIR}/bet_ -n 4
+echo "antsRegistrationSyN done"
 echo "***"
-/flywheel/v0/utils/c3d-1.1.0/bin/c3d_affine_tool -ref ${template} -src ${native_bet_image} ${WORK_DIR}/flirt.mat -fsl2ras -oitk ${WORK_DIR}/itk.txt
-echo "c3d_affine_tool done"
-ls ${WORK_DIR}/itk.txt
-echo "***"
-# Run SyN registration
-antsRegistrationSyN.sh -d 3 -i ${WORK_DIR}/itk.txt -t 'so' -f ${template} -m ${native_bet_image} -j 1 -o ${WORK_DIR}/bet_ -n 4
 
-# --- Step 2: Apply registration to non-betted image --- #
-
+echo -e "\n --- Step 2: Apply registration to segmentation priors --- "
 # Get the affine and warp files from the registration
-AFFINE_TRANSFORM=$(ls ${WORK_DIR}/*0GenericAffine.mat)
-WARP=$(ls ${WORK_DIR}/*1Warp.nii.gz)
-INVERSE_WARP=$(ls ${WORK_DIR}/*1InverseWarp.nii.gz)
+AFFINE_TRANSFORM=$(ls ${WORK_DIR}/bet*GenericAffine.mat)
+WARP=$(ls ${WORK_DIR}/bet*Warp.nii.gz)
+INVERSE_WARP=$(ls ${WORK_DIR}/bet*InverseWarp.nii.gz)
 
-# Transform raw input image to template space using the affine warp
-echo "Transforming raw input image to template space"
-antsApplyTransforms -d 3 -i ${input_file} -r ${template} -o ${WORK_DIR}/warped_to_template.nii.gz -t "$WARP" -t "$AFFINE_TRANSFORM"
+# Transform priors (template space) to each subject's native space
+echo "Transforming priors to native space for segmentation"
+items=(
+    "${TEMPLATE_DIR}/prior1_scale.nii.gz"
+    "${TEMPLATE_DIR}/prior2_scale.nii.gz"
+    "${TEMPLATE_DIR}/prior3_scale.nii.gz"
+)
 
-# Short pause of 3 seconds
-sleep 3
-
-#Multiply by template mask
-fslmaths ${WORK_DIR}/warped_to_template.nii.gz -mul ${template_brain_mask} ${WORK_DIR}/img_for_segmentation
-
-echo -e "\n--- Step 3: Segment image in template space with antsAtropos (3 priors) ---" 
-# Select the image to segment
-img=${WORK_DIR}/img_for_segmentation
-
-# Run Atropos
-antsAtroposN4.sh -d 3 -a ${img}.nii.gz -x ${TEMPLATE_DIR}/brainMask.nii.gz -p ${TEMPLATE_DIR}/prior%d.nii.gz -c 3 -y 1 -y 2 -y 3 -w 0.6 -o ants_atropos_
-
-# 4 tissue prior Chiara wants to use
-# antsAtroposN4.sh -d 3 -a ${img}.nii.gz -x ${TEMPLATE_DIR}/brainMask.nii.gz -p ${TEMPLATE_DIR}/prior%d.nii.gz -c 4 -y 1 -y 2 -y 3 -y 4 -w 0.6 -o ${OUTPUT_DIR}/${img}_ants_atropos_
-
-echo -e "\n --- Step 4: Move segmentations to native space --- "
-# For each posterior, move the segmentation to native space using the inverse warp and affine transform
-echo "Moving segmentations to native space"
-
-for posterior in 1 2 3; do
-    for FILE in $(ls ants_atropos_SegmentationPosteriors${posterior}.nii.gz); do
-        echo "${FILE}"
-        # Apply the warp and affine transform to the segmentations 
-        echo -e "\n native_img: ${native_img}"
-        echo -e "\n AFFINE_TRANSFORM: ${AFFINE_TRANSFORM}"
-        echo -e "\n INVERSE_WARP: ${INVERSE_WARP}"
-        antsApplyTransforms -d 3 -i $FILE -r $input_file -o ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors${posterior}.nii.gz -t ["$AFFINE_TRANSFORM",1] -t $INVERSE_WARP
-    done      
+for item in "${items[@]}"; do
+item_name=$(basename "$item" .nii.gz)
+output_prior="${item_name}.nii.gz"
+ants antsApplyTransforms -d 3 -i "${item}" -r ${native_bet_image} -o ${WORK_DIR}/"${output_prior}" -t ["$AFFINE_TRANSFORM",1] -t "${INVERSE_WARP}" 
+echo "$item_name transformed and saved to ${output_prior}"
 done
 
+# Transform ventricles and subcortical grey matter masks (template space) to each subject's native space
+echo "Transforming masks to native space"
+items=(
+    "${TEMPLATE_DIR}/ventricles_mask.nii.gz"
+    "${TEMPLATE_DIR}/BCP_sub_GM_mask_0.5_resampled_relabelled.nii.gz"
+    "${TEMPLATE_DIR}/cerebellum_mask_relabelled.nii.gz"
+)
+
+for item in "${items[@]}"; do
+item_name=$(basename "$item" .nii.gz)
+output_mask="${item_name}.nii.gz"
+ants antsApplyTransforms -d 3 -i "${item}" -r ${native_bet_image} -o ${WORK_DIR}/"${output_mask}" -n NearestNeighbor -t ["$AFFINE_TRANSFORM",1] -t "${INVERSE_WARP}"
+echo "$item_name transformed and saved to ${output_mask}"
+done
+
+# Run Atropos
+echo -e "\n --- Step 3: Segmenting images --- "
+fslmaths ${native_brain_mask} -dilM ${WORK_DIR}/native_brain_mask_dil.nii.gz
+ants antsAtroposN4.sh -d 3 -a ${input_file} -x ${WORK_DIR}/native_brain_mask_dil.nii.gz -p ${WORK_DIR}/prior%d_scale.nii.gz -c 3 -y 1 -y 2 -w 0.3 -o ${WORK_DIR}/ants_atropos_
+
+
+# Define posterior images from Atropos segmentation (segmentation in native space with 3 priors)
+Posterior1=${WORK_DIR}/ants_atropos_SegmentationPosteriors1.nii.gz
+Posterior2=${WORK_DIR}/ants_atropos_SegmentationPosteriors2.nii.gz
+Posterior3=${WORK_DIR}/ants_atropos_SegmentationPosteriors3.nii.gz
+
+#Refine segmentations to extract ventricles
+fslmaths ${Posterior2} -mul ${WORK_DIR}/ventricles_mask.nii.gz ${WORK_DIR}/ventricles_mask_mul
+fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${Posterior1} ${Posterior2} ${WORK_DIR}/ventricles_mask_mul.nii.gz ${Posterior3}
+fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmean -mul $(fslval ${WORK_DIR}/merged_priors.nii.gz dim4) ${WORK_DIR}/merged_priors_Tsum
+fslmaths ${WORK_DIR}/merged_priors_Tsum.nii.gz -thr 1.1 -bin ${WORK_DIR}/subtractmask
+fslmaths ${Posterior2} -mul ${WORK_DIR}/subtractmask ${WORK_DIR}/ventricles
+fslmaths ${Posterior2} -sub ${WORK_DIR}/ventricles.nii.gz ${WORK_DIR}/csf
+fslmaths ${native_brain_mask} -mul 0 ${WORK_DIR}/zero_filled_image.nii.gz
+fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${WORK_DIR}/zero_filled_image.nii.gz ${Posterior1} ${WORK_DIR}/csf.nii.gz ${WORK_DIR}/ventricles.nii.gz ${Posterior3}
+fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmaxn ${OUTPUT_DIR}/atlas_4classes.nii.gz #total tissue, csf, ventricles, skull
+
+#subcortical GM - use BCP sub_GM mask
+fslmaths ${OUTPUT_DIR}/atlas_4classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_sub_GM_mask_0.5_resampled_relabelled.nii.gz ${WORK_DIR}/sub_GM_mask_mul
+fslmaths ${WORK_DIR}/atlas_4classes.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${OUTPUT_DIR}/atlas_5classes.nii.gz #tissue, subcortical GM, csf, ventricles, skull
+
+#cerebellum 
+fslmaths ${OUTPUT_DIR}/atlas_5classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/cerebellum_mask_relabelled.nii.gz ${WORK_DIR}/cerebellum_mask_mul
+fslmaths ${WORK_DIR}/atlas_5classes.nii.gz -add ${WORK_DIR}/cerebellum_mask_mul ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz #final atlas
+
 # Short pause of 3 seconds
 sleep 3
 
+#Slicer for QC
 echo -e "\n --- Step 5: Run slicer and extract volume estimation from segmentations --- "
 slicer ${native_bet_image} ${native_bet_image} -a ${WORK_DIR}/slicer_bet.png
-slicer ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors1.nii.gz ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors1.nii.gz -a ${WORK_DIR}/slicer_seg1.png
-slicer ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors2.nii.gz ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors2.nii.gz -a ${WORK_DIR}/slicer_seg2.png
-slicer ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors3.nii.gz ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors3.nii.gz -a ${WORK_DIR}/slicer_seg3.png
-pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png - ${WORK_DIR}/slicer_seg2.png - ${WORK_DIR}/slicer_seg3.png ${OUTPUT_DIR}/montage.png
+
+slicer ${OUTPUT_DIR}/atlas_4classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -a ${WORK_DIR}/slicer_seg1.png
+pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png ${OUTPUT_DIR}/montage_4_classes.png
+
+slicer ${OUTPUT_DIR}/atlas_5classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -a ${WORK_DIR}/slicer_seg2.png
+pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg2.png ${OUTPUT_DIR}/montage_5_classes.png
+
+slicer ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -a ${WORK_DIR}/slicer_seg3.png
+pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg3.png ${OUTPUT_DIR}/montage_all_classes.png
 
 # Extract volumes of segmentations
-fslstats ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors2.nii.gz -k ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors1.nii.gz -V > ${WORK_DIR}/volume_seg1.csv
-fslstats ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors2.nii.gz -k ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors2.nii.gz -V > ${WORK_DIR}/volume_seg2.csv
-fslstats ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors3.nii.gz -k ${OUTPUT_DIR}/${native_img}_ants_atropos_SegmentationPosteriors3.nii.gz -V > ${WORK_DIR}/volume_seg3.csv 
+output_csv=${OUTPUT_DIR}/All_volumes.csv
+# Initialize the master CSV file with headers
+echo "Subject total_tissue_volume total_csf_volume tissue_non_sub_GM_non_cerebellum csf_non_ventricles ventricles skull cerebellum left_thalamus left_caudate left_putamen left_globus_pallidus right_thalamus right_caudate right_putamen right_globus_pallidus icv" > "$output_csv"
+atlas=${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz
+
+# Calculate the volume of voxels that equal 1
+volume_equal_1=$(fslstats ${atlas} -l 0.5 -u 1.5 -V | awk '{print $2}')
+# Calculate the volume of voxels that are above 5.5
+volume_above_5_5=$(fslstats ${atlas} -l 5.5 -V | awk '{print $2}')
+# Sum the above volumes to obtain total tissue volume
+total_tissue_volume=$(echo "$volume_equal_1 + $volume_above_5_5" | bc)
+
+total_csf_volume=$(fslstats ${atlas} -l 1.5 -u 3.5 -V | awk '{print $2}')
+
+volumes=`fslstats -K ${atlas} ${atlas} -M -V | sed '/missing/d'| awk '{print $3}'`
+
+# Calculate the volume of voxels below 4
+volume_below_4=$(fslstats ${atlas} -u 3.5 -V | awk '{print $2}')
+# Calculate the volume of voxels above 4
+volume_above_4=$(fslstats ${atlas} -l 4.5 -V | awk '{print $2}')
+# Sum the above volumes to obtain intracranial volume
+icv=$(echo "$volume_below_4 + $volume_above_4" | bc)        
+echo $subject_name $total_tissue_volume $total_csf_volume $volumes $icv >> $output_csv
+echo "Volumes extracted and saved to $output_csv"
+
 
 # --- Handle exit status --- #
 # Check if the output directory is empty
@@ -170,6 +207,8 @@ if [ -z "$(find "$OUTPUT_DIR" -mindepth 1 -print -quit 2>/dev/null)" ]; then
     echo "Error: Output directory is empty"
     exit 1
 fi
+
+
 
 
 
