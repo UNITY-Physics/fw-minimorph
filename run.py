@@ -8,7 +8,7 @@ from flywheel_gear_toolkit import GearToolkitContext
 from utils.parser import parse_config
 from utils.command_line import exec_command
 from utils.gatherDemographics import get_demo
-from utils.build_csv import get_demo
+from utils.curate_output import housekeeping
 
 # from utils.parseOutput import parseOutput
 
@@ -32,7 +32,7 @@ def main(context: GearToolkitContext) -> None:
 
     # Add demographic data to the output
     print("concatenating demographics...")
-    get_demo(context)
+    housekeeping(context)
 
 # Only execute if file is run as main, not when imported by another module
 if __name__ == "__main__":  # pragma: no cover
