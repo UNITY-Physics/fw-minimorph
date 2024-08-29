@@ -1,4 +1,5 @@
 #!/bin/sh
+set -x
 
 ```
 # Module: Pipeline for segmenting infant brain images on Flywheel
@@ -81,14 +82,20 @@ native_brain_mask=${WORK_DIR}/native_brain_mask.nii.gz
 
 #bet image to help with registration to template
 mri_synthstrip -i ${input_file} -o ${native_bet_image} -m ${native_brain_mask} -b 4
+sync
 echo "BET image and mask created"
 ls ${native_bet_image} ${native_brain_mask}
 echo "***"  
 
+sleep 3
+
 # Register native BET image to template brain
 echo "Registering native BET image to template brain"
 echo -e "\n Run SyN registration"
+
 antsRegistrationSyN.sh -d 3 -t 's' -f ${template} -m ${native_bet_image} -j 1 -p 'f' -o ${WORK_DIR}/bet_ -n 4
+sync
+sleep 3
 echo "antsRegistrationSyN done"
 echo "***"
 
@@ -112,6 +119,7 @@ output_prior="${item_name}.nii.gz"
 echo "*** Transforming ${item} ***"
 echo "*** Output: ${WORK_DIR}/"${output_prior}" ***"
 antsApplyTransforms -d 3 -i "${item}" -r ${native_bet_image} -o ${WORK_DIR}/"${output_prior}" -t ["$AFFINE_TRANSFORM",1] -t "${INVERSE_WARP}" 
+sync
 echo "$item_name transformed and saved to ${output_prior}"
 done
 
@@ -127,38 +135,52 @@ for item in "${items[@]}"; do
 item_name=$(basename "$item" .nii.gz)
 output_mask="${item_name}.nii.gz"
 antsApplyTransforms -d 3 -i "${item}" -r ${native_bet_image} -o ${WORK_DIR}/"${output_mask}" -n NearestNeighbor -t ["$AFFINE_TRANSFORM",1] -t "${INVERSE_WARP}"
+sync
 echo "$item_name transformed and saved to ${output_mask}"
 done
 
 # Run Atropos
 echo -e "\n --- Step 3: Segmenting images --- "
 fslmaths ${native_brain_mask} -dilM ${WORK_DIR}/native_brain_mask_dil.nii.gz
+sync
 antsAtroposN4.sh -d 3 -a ${input_file} -x ${WORK_DIR}/native_brain_mask_dil.nii.gz -p ${WORK_DIR}/prior%d_scale.nii.gz -c 3 -y 1 -y 2 -w 0.3 -o ${WORK_DIR}/ants_atropos_
+sync
 echo -e "\n Past Atropos segmentation step "
+
+sleep 3
 
 # Define posterior images from Atropos segmentation (segmentation in native space with 3 priors)
 Posterior1=${WORK_DIR}/ants_atropos_SegmentationPosteriors1.nii.gz
 Posterior2=${WORK_DIR}/ants_atropos_SegmentationPosteriors2.nii.gz
 Posterior3=${WORK_DIR}/ants_atropos_SegmentationPosteriors3.nii.gz
 
+
+
 #Refine segmentations to extract ventricles
 fslmaths ${Posterior2} -mul ${WORK_DIR}/ventricles_mask.nii.gz ${WORK_DIR}/ventricles_mask_mul
 fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${Posterior1} ${Posterior2} ${WORK_DIR}/ventricles_mask_mul.nii.gz ${Posterior3}
+sync
 fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmean -mul $(fslval ${WORK_DIR}/merged_priors.nii.gz dim4) ${WORK_DIR}/merged_priors_Tsum
 fslmaths ${WORK_DIR}/merged_priors_Tsum.nii.gz -thr 1.1 -bin ${WORK_DIR}/subtractmask
 fslmaths ${Posterior2} -mul ${WORK_DIR}/subtractmask ${WORK_DIR}/ventricles
 fslmaths ${Posterior2} -sub ${WORK_DIR}/ventricles.nii.gz ${WORK_DIR}/csf
 fslmaths ${native_brain_mask} -mul 0 ${WORK_DIR}/zero_filled_image.nii.gz
 fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${WORK_DIR}/zero_filled_image.nii.gz ${Posterior1} ${WORK_DIR}/csf.nii.gz ${WORK_DIR}/ventricles.nii.gz ${Posterior3}
+sync
 fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmaxn ${OUTPUT_DIR}/atlas_4classes.nii.gz #total tissue, csf, ventricles, skull
+
+# Short pause of 3 seconds
+sleep 3
 
 #subcortical GM - use BCP sub_GM mask
 fslmaths ${OUTPUT_DIR}/atlas_4classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_sub_GM_mask_0.5_resampled_relabelled.nii.gz ${WORK_DIR}/sub_GM_mask_mul
 fslmaths ${OUTPUT_DIR}/atlas_4classes.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${OUTPUT_DIR}/atlas_5classes.nii.gz #tissue, subcortical GM, csf, ventricles, skull
+sync
 
 #cerebellum 
 fslmaths ${OUTPUT_DIR}/atlas_5classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/cerebellum_mask_relabelled.nii.gz ${WORK_DIR}/cerebellum_mask_mul
 fslmaths ${OUTPUT_DIR}/atlas_5classes.nii.gz -add ${WORK_DIR}/cerebellum_mask_mul ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz #final atlas
+sync
 
 # Short pause of 3 seconds
 sleep 3
