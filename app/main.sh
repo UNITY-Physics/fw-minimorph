@@ -129,6 +129,7 @@ items=(
     "${TEMPLATE_DIR}/ventricles_mask.nii.gz"
     "${TEMPLATE_DIR}/BCP_sub_GM_mask_0.5_resampled_relabelled.nii.gz"
     "${TEMPLATE_DIR}/cerebellum_mask_relabelled.nii.gz"
+    "${TEMPLATE_DIR}/callosum_mask_relabelled.nii.gz"
 )
 
 for item in "${items[@]}"; do
@@ -182,6 +183,11 @@ fslmaths ${OUTPUT_DIR}/atlas_5classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/cer
 fslmaths ${OUTPUT_DIR}/atlas_5classes.nii.gz -add ${WORK_DIR}/cerebellum_mask_mul ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz #final atlas
 sync
 
+#callosum
+fslmaths ${WORK_DIR}/Segmentation_atlas_all_classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled.nii.gz ${WORK_DIR}/callosum_mask_mul
+fslmaths ${WORK_DIR}/Segmentation_atlas_all_classes.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
+sync
+
 # Short pause of 3 seconds
 sleep 3
 
@@ -201,8 +207,8 @@ pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg3.png ${OUTPUT_DIR}
 # Extract volumes of segmentations
 output_csv=${WORK_DIR}/All_volumes.csv
 # Initialize the master CSV file with headers
-echo "template_age total_tissue_volume total_csf_volume tissue_non_sub_GM_non_cerebellum csf_non_ventricles ventricles skull cerebellum left_thalamus left_caudate left_putamen left_globus_pallidus right_thalamus right_caudate right_putamen right_globus_pallidus icv" > "$output_csv"
-atlas=${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz
+echo "template_age total_tissue_volume total_csf_volume tissue_non_sub_GM_non_cerebellum csf_non_ventricles ventricles skull cerebellum posterior_callosum mid_posterior_callosum central_callosum mid_anterior_callosum anterior_callosum left_thalamus left_caudate left_putamen left_globus_pallidus right_thalamus right_caudate right_putamen right_globus_pallidus icv" > "$output_csv"
+atlas=${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
 
 # Calculate the volume of voxels that equal 1
 volume_equal_1=$(fslstats ${atlas} -l 0.5 -u 1.5 -V | awk '{print $2}')
