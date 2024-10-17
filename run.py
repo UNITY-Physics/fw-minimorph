@@ -7,8 +7,8 @@ import os
 from flywheel_gear_toolkit import GearToolkitContext
 from utils.parser import parse_config
 from utils.command_line import exec_command
-from utils.gatherDemographics import get_demo
 from utils.curate_output import housekeeping
+from utils.Inspect_segmentations import SegQC
 
 # from utils.parseOutput import parseOutput
 
@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 def main(context: GearToolkitContext) -> None:
     """Parses config and runs."""
-    input_path, age = parse_config(context)
+    input_path, age, demographics = parse_config(context)
     
     print("running main.sh...")
     # Set the command to be executed
@@ -30,9 +30,14 @@ def main(context: GearToolkitContext) -> None:
     # Execute the command
     exec_command(command, shell=True, cont_output=True)
 
-    # Add demographic data to the output
-    print("concatenating demographics...")
-    housekeeping(context)
+    # Run housekeeping
+    print("running housekeeping...")
+    housekeeping(demographics)
+
+    # Run Segmentation QC
+    print("running segmentation QC...")
+    subject_label = demographics['subject'].values[0]
+    SegQC(input_path, subject_label)
 
 # Only execute if file is run as main, not when imported by another module
 if __name__ == "__main__":  # pragma: no cover

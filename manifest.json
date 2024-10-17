@@ -1,114 +1,114 @@
 {
-  "author": "Chiara Casella, Niall Bourke, Johnny o Muircheartaigh ",
-  "cite": "Sean C.L. Deoni, Muriel M.K. Bruchhage, Jennifer Beauchemin, Alexandra Volpe, Viren D'Sa, Matthew Huentelman, Steven C.R. Williams,Accessible pediatric neuroimaging using a low field strength MRI scanner, NeuroImage, Volume 238, 2021, 118273, ISSN 1053-8119, https://doi.org/10.1016/j.neuroimage.2021.118273. (https://www.sciencedirect.com/science/article/pii/S1053811921005498);",
-  "command": "python3 /flywheel/v0/run.py",
-  "config": {
-    "age": {
-      "default": "None",
-      "description": "Age of the subject (Months).",
-      "enum": [
-        "None",
-        "3M",
-        "6M",
-        "12M",
-        "18M",
-        "24M"
-      ],
-      "type": "string"
-    }
-  },
-  "custom": {
-    "analysis-level": "participant",
-    "flywheel": {
-      "classification": {
-        "components": [
-          "FreeSurfer"
-        ],
-        "keywords": [
-          "segmentation",
-          "volume",
-          "template"
-        ],
-        "modality": [
-          "MR"
-        ],
-        "type": [
-          "nifti"
-        ]
-      },
-      "suite": "UNITY Apps"
-    },
-    "gear-builder": {
-      "category": "analysis",
-      "image": "flywheel/ants-segmentation:0.3.0"
-    },
-    "kcl-app-binary": "app/main.sh",
-    "kcl-app-modalities": [
-      "anat"
-    ],
-    "license": {
-      "dependencies": [
-        {
-          "name": "Other",
-          "url": "/usr/local/freesurfer/license.txt"
+    "author": "Chiara Casella, Niall Bourke, Johnny O Muircheartaigh ",
+    "cite": "Sean C.L. Deoni, Muriel M.K. Bruchhage, Jennifer Beauchemin, Alexandra Volpe, Viren D'Sa, Matthew Huentelman, Steven C.R. Williams,Accessible pediatric neuroimaging using a low field strength MRI scanner, NeuroImage, Volume 238, 2021, 118273, ISSN 1053-8119, https://doi.org/10.1016/j.neuroimage.2021.118273. (https://www.sciencedirect.com/science/article/pii/S1053811921005498);",
+    "command": "python3 /flywheel/v0/run.py",
+    "config": {
+        "age": {
+            "default": "None",
+            "description": "Age of the subject (Months).",
+            "enum": [
+                "None",
+                "3M",
+                "6M",
+                "12M",
+                "18M",
+                "24M"
+            ],
+            "type": "string"
         }
-      ],
-      "main": {
-        "name": "",
-        "url": ""
-      },
-      "non-commercial-use-only": false
-    }
-  },
-  "description": "UNDER DEVELOPMENT: This gear uses ANTs to segment the brain into different regions.",
-  "environment": {
-    "CONDA_DIR": "/opt/conda",
-    "FLYWHEEL": "/flywheel/v0",
-    "GPG_KEY": "E3FF2839C048B25C084DEBE9B26995E310250568",
-    "LANG": "C.UTF-8",
-    "PATH": "/opt/conda/bin:/usr/local/freesurfer/bin:/usr/local/freesurfer/fsfast/bin:/usr/local/freesurfer/tktools:/usr/local/freesurfer/mni/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-    "PYTHON_GET_PIP_SHA256": "fa6f3fb93cce234cd4e8dd2beb54a51ab9c247653b52855a48dd44e6b21ff28b",
-    "PYTHON_GET_PIP_URL": "https://github.com/pypa/get-pip/raw/c20b0cfd643cd4a19246ccf204e2997af70f6b21/public/get-pip.py",
-    "PYTHON_PIP_VERSION": "21.2.3",
-    "PYTHON_VERSION": "3.8.11",
-    "FREESURFER": "/usr/local/freesurfer",
-    "FREESURFER_HOME": "/usr/local/freesurfer",
-    "container": "oci",
-    "PWD": "/flywheel/v0",
-    "SHLVL": "1",
-    "_": "/usr/bin/printenv",
-    "OS": "Linux",
-    "SUBJECTS_DIR": "/usr/local/freesurfer/subjects",
-    "FSLDIR": "/opt/conda",
-    "MNI_DIR": "/usr/local/freesurfer/mni",
-    "FSFAST_HOME": "/usr/local/freesurfer/fsfast",
-    "FSF_OUTPUT_FORMAT": "nii.gz",
-    "LOCAL_DIR": "/usr/local/freesurfer/local",
-    "FMRI_ANALYSIS_DIR": "/usr/local/freesurfer/fsfast",
-    "FUNCTIONALS_DIR": "/usr/local/freesurfer/sessions",
-    "MNI_PERL5LIB": "/usr/local/freesurfer/mni/share/perl5",
-    "MINC_BIN_DIR": "/usr/local/freesurfer/mni/bin",
-    "PERL5LIB": "/usr/local/freesurfer/mni/share/perl5",
-    "FS_OVERRIDE": "0",
-    "MINC_LIB_DIR": "/usr/local/freesurfer/mni/lib",
-    "MNI_DATAPATH": "/usr/local/freesurfer/mni/data"
-  },
-  "inputs": {
-    "api-key": {
-      "base": "api-key",
-      "read-only": true
     },
-    "input": {
-      "base": "file",
-      "description": "input file",
-      "optional": false
-    }
-  },
-  "label": "ants-segmentation",
-  "license": "MIT",
-  "maintainer": "Niall Bourke <niall.bourke@kcl.ac.uk>",
-  "name": "ants-segmentation",
-  "source": "https://github.com/Nialljb/fw-ants-segmentation",
-  "url": "https://github.com/Nialljb/fw-ants-segmentation",
-  "version": "0.3.0"
+    "custom": {
+        "analysis-level": "participant",
+        "flywheel": {
+            "classification": {
+                "components": [
+                    "FreeSurfer"
+                ],
+                "keywords": [
+                    "segmentation",
+                    "volume",
+                    "template"
+                ],
+                "modality": [
+                    "MR"
+                ],
+                "type": [
+                    "nifti"
+                ]
+            },
+            "suite": "UNITY Apps"
+        },
+        "gear-builder": {
+            "category": "analysis",
+            "image": "flywheel/ants-segmentation:0.3.5"
+        },
+        "kcl-app-binary": "app/main.sh",
+        "kcl-app-modalities": [
+            "anat"
+        ],
+        "license": {
+            "dependencies": [
+                {
+                    "name": "Other",
+                    "url": "/usr/local/freesurfer/license.txt"
+                }
+            ],
+            "main": {
+                "name": "",
+                "url": ""
+            },
+            "non-commercial-use-only": false
+        }
+    },
+    "description": "This gear uses ANTs to segment the brain into different regions.",
+    "environment": {
+        "CONDA_DIR": "/opt/conda",
+        "FLYWHEEL": "/flywheel/v0",
+        "GPG_KEY": "E3FF2839C048B25C084DEBE9B26995E310250568",
+        "LANG": "C.UTF-8",
+        "PATH": "/opt/conda/bin:/usr/local/freesurfer/bin:/usr/local/freesurfer/fsfast/bin:/usr/local/freesurfer/tktools:/usr/local/freesurfer/mni/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "PYTHON_GET_PIP_SHA256": "fa6f3fb93cce234cd4e8dd2beb54a51ab9c247653b52855a48dd44e6b21ff28b",
+        "PYTHON_GET_PIP_URL": "https://github.com/pypa/get-pip/raw/c20b0cfd643cd4a19246ccf204e2997af70f6b21/public/get-pip.py",
+        "PYTHON_PIP_VERSION": "21.2.3",
+        "PYTHON_VERSION": "3.8.11",
+        "FREESURFER": "/usr/local/freesurfer",
+        "FREESURFER_HOME": "/usr/local/freesurfer",
+        "container": "oci",
+        "PWD": "/flywheel/v0",
+        "SHLVL": "1",
+        "_": "/usr/bin/printenv",
+        "OS": "Linux",
+        "SUBJECTS_DIR": "/usr/local/freesurfer/subjects",
+        "FSLDIR": "/opt/conda",
+        "MNI_DIR": "/usr/local/freesurfer/mni",
+        "FSFAST_HOME": "/usr/local/freesurfer/fsfast",
+        "FSF_OUTPUT_FORMAT": "nii.gz",
+        "LOCAL_DIR": "/usr/local/freesurfer/local",
+        "FMRI_ANALYSIS_DIR": "/usr/local/freesurfer/fsfast",
+        "FUNCTIONALS_DIR": "/usr/local/freesurfer/sessions",
+        "MNI_PERL5LIB": "/usr/local/freesurfer/mni/share/perl5",
+        "MINC_BIN_DIR": "/usr/local/freesurfer/mni/bin",
+        "PERL5LIB": "/usr/local/freesurfer/mni/share/perl5",
+        "FS_OVERRIDE": "0",
+        "MINC_LIB_DIR": "/usr/local/freesurfer/mni/lib",
+        "MNI_DATAPATH": "/usr/local/freesurfer/mni/data"
+    },
+    "inputs": {
+        "api-key": {
+            "base": "api-key",
+            "read-only": true
+        },
+        "input": {
+            "base": "file",
+            "description": "input file",
+            "optional": false
+        }
+    },
+    "label": "ants-segmentation",
+    "license": "MIT",
+    "maintainer": "Niall Bourke <niall.bourke@kcl.ac.uk>",
+    "name": "ants-segmentation",
+    "source": "https://github.com/Nialljb/fw-ants-segmentation",
+    "url": "https://github.com/Nialljb/fw-ants-segmentation",
+    "version": "0.3.5"
 }

@@ -2,7 +2,8 @@
 
 from typing import Tuple
 from flywheel_gear_toolkit import GearToolkitContext
-import sys
+from utils.curate_output import demo
+import warnings
 
 def parse_config(
     gear_context: GearToolkitContext,
@@ -15,6 +16,9 @@ def parse_config(
         gear_options: options for the gear
         app_options: options to pass to the app
     """
+    # Gather demographic data from the session
+    print("pulling demographics...")
+    demographics = demo(gear_context)
 
     print("Running parse_config...")
 
@@ -22,9 +26,11 @@ def parse_config(
     age = gear_context.config.get("age")
 
     if age is None:
-        raise ValueError("Age is required")
-        sys.exit(1)
-    
-    # TO DO: Add in parser to look for age where possible
+        warnings.warn("WARNING!!! Age is not provided in the config.json file", UserWarning)
+        print("Checking for age in dicom headers...")
+        age = demographics['dicom_age_in_months'].values[0]
+        print("dicom_age_in_months: ", age)
+    else:
+        ValueError("Age is not provided in config.json file or dicom headers")
 
-    return input, age
+    return input, age, demographics

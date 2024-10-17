@@ -185,7 +185,7 @@ sync
 
 #callosum
 fslmaths ${WORK_DIR}/Segmentation_atlas_all_classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled.nii.gz ${WORK_DIR}/callosum_mask_mul
-fslmaths ${WORK_DIR}/Segmentation_atlas_all_classes.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
+fslmaths ${WORK_DIR}/Segmentation_atlas_all_classes.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
 sync
 
 # Short pause of 3 seconds
@@ -195,20 +195,22 @@ sleep 3
 echo -e "\n --- Step 5: Run slicer and extract volume estimation from segmentations --- "
 slicer ${native_bet_image} ${native_bet_image} -a ${WORK_DIR}/slicer_bet.png
 
-slicer ${OUTPUT_DIR}/atlas_4classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -a ${WORK_DIR}/slicer_seg1.png
+slicer ${OUTPUT_DIR}/atlas_4classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg1.png
 pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png ${OUTPUT_DIR}/montage_4_classes.png
 
-slicer ${OUTPUT_DIR}/atlas_5classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -a ${WORK_DIR}/slicer_seg2.png
+slicer ${OUTPUT_DIR}/atlas_5classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg2.png
 pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg2.png ${OUTPUT_DIR}/montage_5_classes.png
 
-slicer ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -a ${WORK_DIR}/slicer_seg3.png
+slicer ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg3.png
 pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg3.png ${OUTPUT_DIR}/montage_all_classes.png
 
 # Extract volumes of segmentations
 output_csv=${WORK_DIR}/All_volumes.csv
 # Initialize the master CSV file with headers
 echo "template_age total_tissue_volume total_csf_volume tissue_non_sub_GM_non_cerebellum csf_non_ventricles ventricles skull cerebellum posterior_callosum mid_posterior_callosum central_callosum mid_anterior_callosum anterior_callosum left_thalamus left_caudate left_putamen left_globus_pallidus right_thalamus right_caudate right_putamen right_globus_pallidus icv" > "$output_csv"
+
 atlas=${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
+# atlas=${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz
 
 # Calculate the volume of voxels that equal 1
 volume_equal_1=$(fslstats ${atlas} -l 0.5 -u 1.5 -V | awk '{print $2}')
@@ -226,7 +228,18 @@ volume_below_4=$(fslstats ${atlas} -u 3.5 -V | awk '{print $2}')
 # Calculate the volume of voxels above 4
 volume_above_4=$(fslstats ${atlas} -l 4.5 -V | awk '{print $2}')
 # Sum the above volumes to obtain intracranial volume
-icv=$(echo "$volume_below_4 + $volume_above_4" | bc)        
+icv=$(echo "$volume_below_4 + $volume_above_4" | bc) 
+
+echo "volume equal 1: $volume_equal_1"
+echo "volume above 5.5: $volume_above_5_5"
+echo "total tissue volume: $total_tissue_volume"
+echo "total csf volume: $total_csf_volume"
+echo "volumes: $volumes"
+echo "volume below 4: $volume_below_4"
+echo "volume above 4: $volume_above_4"
+echo "volume icv: $icv"
+
+
 # Assuming these variables are already defined in your script
 # echo "$age,$total_tissue_volume,$total_csf_volume,$volumes,$icv" >> "$output_csv"
 echo $age $total_tissue_volume $total_csf_volume $volumes $icv >> $output_csv

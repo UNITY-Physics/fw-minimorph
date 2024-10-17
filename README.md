@@ -16,7 +16,7 @@ The script assumes that the input image is in NIfTI format. The script outputs t
 
 This script is designed to be run as a Flywheel Gear. The script takes two inputs:
 1. The input image to segment
-2. The age of the template to use in months (e.g. 3, 6, 12, 24, 48, 72)
+2. The age of the template to use in months (e.g. 3, 6, 12, 24)
 
 
 [FAQ](#faq)
@@ -78,19 +78,13 @@ Fast and sequence-adaptive whole-brain segmentation using parametric Bayesian mo
 
 * parcelation
   * **Base**: file
-  * **Description**: parcelation file 
+  * **Description**: parcelation nifti files for visual QC
   * **Optional**: true
 
-* vol
+* volume
   * **Base**: file
   * **Description**: volume estimation file (csv)
   * **Optional**: true
-
-* QC
-  * **Base**: file
-  * **Description**: QC file (csv)
-  * **Optional**: true
-
 
 #### Metadata
 
@@ -122,8 +116,8 @@ it does, but HOW it works in flywheel
 ### Description
 
 This gear is run at either the `Subject` or the `Session` level. It downloads the data
-for that subject/session into the `/flwyhweel/v0/work/bids` folder and then runs the
-`synthseg` pipeline on it.
+for that subject/session into the `/flwyhweel/v0/work/` folder and then runs the
+`ants-segmentation` pipeline on it.
 
 After the pipeline is run, the output folder is zipped and saved into the analysis
 container.
@@ -158,7 +152,6 @@ Description of workflow
    1. file metadata importer
    2. file classifier
    3. dcm2niix
-   4. MRIQC (optional)
 3. Select either a subject or a session.
 4. Run the MRR gear (Hyperfine multi-resolution registration)
 5. Run the ants-segmentation gear

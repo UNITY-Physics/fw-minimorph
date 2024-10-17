@@ -8,7 +8,7 @@ import os
 #  Module to identify the correct template use for the subject VBM analysis based on age at scan
 #  Need to get subject identifiers from inside running container in order to find the correct template from the SDK
 
-def housekeeping(context):
+def demo(context):
 
     data = []
     # Read config.json file
@@ -59,7 +59,7 @@ def housekeeping(context):
     # get the T2w axi dicom acquisition from the session
     # Should contain the DOB in the dicom header
     # Some projects may have DOB removed, but may have age at scan in the subject container
-    age = 'NA'
+    age_in_months = 'NA'
     PatientSex = 'NA'
     for acq in session_container.acquisitions.iter():
         # print(acq.label)
@@ -83,38 +83,48 @@ def housekeeping(context):
                         seriesDate = dicom_header.info['SeriesDate']
                         # Calculate age at scan
                         age = (datetime.strptime(seriesDate, '%Y%m%d')) - (datetime.strptime(dob, '%Y%m%d'))
-                        age = age.days
+                        age_in_days = age.days
+                        age_in_months = int(age_in_days / 30.44)
                     elif session.age != None: 
                         # 
                         print("Checking session infomation label...")
                         # print("session.age: ", session.age) 
-                        age = int(session.age / 365 / 24 / 60 / 60) # This is in seconds
+                        age_in_days = int(session.age / 365 / 24 / 60 / 60) # This is in seconds
+                        age_in_months = int(age_in_days / 30.44)
                     elif 'PatientAge' in dicom_header.info:
                         print("No DOB in dicom header or age in session info! Trying PatientAge from dicom...")
                         age = dicom_header.info['PatientAge']
                         # Need to drop the 'D' from the age and convert to int
                         age = re.sub('\D', '', age)
-                        age = int(age)
+                        age_in_days = int(age)
+                        age_in_months = int(age_in_days / 30.44)
                     else:
                         print("No age at scan in session info label! Ask PI...")
-                        age = 0
+                        age_in_months = 0
 
-                    if age == 0:
+                    if age_in_months == 0:
                         print("No age at scan - skipping")
                         exit(1)
-                    # Make sure age is positive
-                    elif age < 0:
-                        age = age * -1
-                    print("age: ", age)
+
+                    # # Make sure age is positive
+                    # elif age < 0:
+                    #     age = age * -1
+                    print("age in months: ", age_in_months)
     
+    age_in_months = str(age_in_months) + "M"
     # assign values to lists. 
-    data = [{'subject': subject_label, 'session': session_label, 'dicom_age': age, 'sex': PatientSex, 'acquisition': cleaned_string }]  
+    data = [{'subject': subject_label, 'session': session_label, 'dicom_age_in_months': age_in_months, 'sex': PatientSex, 'acquisition': cleaned_string }]  
     # Creates DataFrame.  
     demo = pd.DataFrame(data)
+    print("Demographics: ", subject_label, session_label, age, PatientSex)
 
+    return demo
 
     # -------------------  Concatenate the data  -------------------  #
 
+def housekeeping(demo):
+
+    cleaned_string = demo['acquisition'].values[0]
     filePath = '/flywheel/v0/work/All_volumes.csv'
     volumes = pd.read_csv(filePath, sep='\s', engine='python')
     # sep='\t', delim_whitespace=True,
@@ -125,16 +135,3 @@ def housekeeping(context):
     outdir = ('/flywheel/v0/output/' + out_name)
     df.to_csv(outdir)
 
- 
-    # # -------------------  Generate QC image  -------------------  #
-
-
-    # Run the render script to generate the QC image 
-
-    # # Construct the command to run your bash script with variables as arguments
-    # qc_command = f"/flywheel/v0/utils/render.sh '{subject_label}' '{session_label}' '{cleaned_string}' '{infant}'"
-
-    # # Execute the bash script
-    # subprocess.run(qc_command, shell=True)
-
-    print("Demographics: ", subject_label, session_label, age, PatientSex)

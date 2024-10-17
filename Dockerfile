@@ -21,5 +21,5 @@ RUN pip3 install flywheel-gear-toolkit && \
 RUN bash -c 'chmod +rx $FLYWHEEL/run.py' && \
     bash -c 'chmod +rx $FLYWHEEL/app/' 
     
-ENTRYPOINT ["python3","/flywheel/v0/main.sh"] 
+ENTRYPOINT ["python3","/flywheel/v0/run.py"] 
 # Flywheel reads the config command over this entrypoint

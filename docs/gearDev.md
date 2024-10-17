@@ -8,7 +8,7 @@ https://flywheel-io.gitlab.io/tools/app/cli/fw-beta/login/
    
 > source ~/.zshrc 
   
-> fw-beta login --api-key=${FW_CLI_API_KEY} .   
+> fw-beta login --api-key=${FW_CLI_API_KEY}    
 
 ### In the folder where you have your gear (Dockerfile and manifest), run:
 > fw-beta gear build 
