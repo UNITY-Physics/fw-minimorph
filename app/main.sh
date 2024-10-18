@@ -184,8 +184,8 @@ fslmaths ${OUTPUT_DIR}/atlas_5classes.nii.gz -add ${WORK_DIR}/cerebellum_mask_mu
 sync
 
 #callosum
-fslmaths ${WORK_DIR}/Segmentation_atlas_all_classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled.nii.gz ${WORK_DIR}/callosum_mask_mul
-fslmaths ${WORK_DIR}/Segmentation_atlas_all_classes.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
+fslmaths ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled.nii.gz ${WORK_DIR}/callosum_mask_mul
+fslmaths ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
 sync
 
 # Short pause of 3 seconds
