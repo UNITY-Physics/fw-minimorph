@@ -13,13 +13,13 @@ The script assumes that the input image is in NIfTI format. The script outputs t
 i)Age-specific templates: The templates used in this pipeline were constructed using a subset of high-quality datasets from the UCT-Khula study. Brain extraction was performed on the isotropic T2-weighted images using the mri_synthstrip tool. Edge images were generated using FSL. Both the brain-extracted and edge images were used as input channels for template building in antsMultivariateTemplateConstruction.sh.
 
 ii) Segmentation priors: 
-To generate tissue and CSF priors, age-specific T2-weighted images and corresponding tissue segmentation maps from the Baby Connectome Project (BCP) atlas were non-linearly registered to the age-specific study template using ANTs. These transformations were applied to the white matter (WM), grey matter (GM), and cerebrospinal fluid (CSF) segmentation maps.
+To generate tissue and CSF priors, age-specific T2-weighted images and corresponding tissue segmentation maps from the Baby Connectome Project atlas (BCP, https://www.nitrc.org/projects/uncbcp_4d_atlas/)  were non-linearly registered to the age-specific study template using ANTs. These transformations were applied to the white matter (WM), grey matter (GM), and cerebrospinal fluid (CSF) segmentation maps.
 - Tissue prior: The WM and GM priors were summed to generate a combined "tissue" prior.
 - Skull prior: A "skull" prior was created by dilating the brain mask and subtracting the original mask, isolating the skull boundary. Note: this skull prior is used exclusively to improve the quality of extra-axial segmentations and should not be used for volumetric analysis.
 
 iii) Segmentation masks:
 - Subcortical GM segmentation masks: The age-specific template was resampled to a 0.5mm isotropic resolution, and the subcortical parcellation maps from the BCP atlas were registered to this template.
-- Callosal masks: The age-specific template was resampled to a 1mm isotropic resolution, and the Penn-CHOP Infant Brain Atlas (1-year-old) was registered to it.
+- Callosal masks: The age-specific template was resampled to a 1mm isotropic resolution, and the Penn-CHOP Infant Brain Atlas (1-year-old, https://brainmrimap.org/infant-atlas.html) was registered to it.
 - Ventricles masks: Ventricles were manually delineated in template space, and their accuracy was confirmed through visual inspection by a second expert.
 
 **Segmentation pipeline:**
