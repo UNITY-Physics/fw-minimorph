@@ -8,9 +8,9 @@ This script is designed to run the ANTs pipeline for segmenting infant brain ima
 
 The script assumes that the input image is in NIfTI format. The script outputs the segmentations in native space.
 
-Computation of Age-Specific Templates, Segmentation Priors and Segmentation Masks
+**Computation of Age-Specific Templates, Segmentation Priors and Segmentation Masks:**
 
-i) Age-specific templates: The templates used in this pipeline were constructed using a subset of high-quality datasets from the UCT-Khula study. Brain extraction was performed on the isotropic T2-weighted images using the mri_synthstrip tool. Edge images were generated using FSL. Both the brain-extracted and edge images were used as input channels for template building in antsMultivariateTemplateConstruction.sh.
+<u>i)Age-specific templates:</u> The templates used in this pipeline were constructed using a subset of high-quality datasets from the UCT-Khula study. Brain extraction was performed on the isotropic T2-weighted images using the mri_synthstrip tool. Edge images were generated using FSL. Both the brain-extracted and edge images were used as input channels for template building in antsMultivariateTemplateConstruction.sh.
 
 ii) Segmentation priors: 
 To generate tissue and CSF priors, age-specific T2-weighted images and corresponding tissue segmentation maps from the Baby Connectome Project (BCP) atlas were non-linearly registered to the age-specific study template using ANTs. These transformations were applied to the white matter (WM), grey matter (GM), and cerebrospinal fluid (CSF) segmentation maps.
@@ -22,7 +22,7 @@ iii) Segmentation masks:
 - Callosal masks: The age-specific template was resampled to a 1mm isotropic resolution, and the Penn-CHOP Infant Brain Atlas (1-year-old) was registered to it.
 - Ventricles masks: Ventricles were manually delineated in template space, and their accuracy was confirmed through visual inspection by a second expert.
 
-Segmentation pipeline: 
+**Segmentation pipeline:**
 
 Native, brain-extracted T2-w isotropic files are registered to the age-specific template using ANTs’ SyN registration. The resulting transformations are then applied to the CSF, tissue and skull priors. Subsequently, antsAtroposN4.sh is used to segment the native image into three tissue classes, using a dilated brain mask, with a priors’ weight of 0.3. The resulting tissue segmentation posteriors are refined to separate the ventricles from other cerebrospinal fluid (CSF) regions. To obtain the subcortical GM  and callosal segmentations, the tissue posterior obtained with ANTs is multiplied by the subcortical GM and callosum masks in native space. 
 
