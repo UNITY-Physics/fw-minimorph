@@ -10,7 +10,7 @@ The script assumes that the input image is in NIfTI format. The script outputs t
 
 **Computation of Age-Specific Templates, Segmentation Priors and Segmentation Masks:**
 
-<u>i)Age-specific templates:</u> The templates used in this pipeline were constructed using a subset of high-quality datasets from the UCT-Khula study. Brain extraction was performed on the isotropic T2-weighted images using the mri_synthstrip tool. Edge images were generated using FSL. Both the brain-extracted and edge images were used as input channels for template building in antsMultivariateTemplateConstruction.sh.
+i)Age-specific templates: The templates used in this pipeline were constructed using a subset of high-quality datasets from the UCT-Khula study. Brain extraction was performed on the isotropic T2-weighted images using the mri_synthstrip tool. Edge images were generated using FSL. Both the brain-extracted and edge images were used as input channels for template building in antsMultivariateTemplateConstruction.sh.
 
 ii) Segmentation priors: 
 To generate tissue and CSF priors, age-specific T2-weighted images and corresponding tissue segmentation maps from the Baby Connectome Project (BCP) atlas were non-linearly registered to the age-specific study template using ANTs. These transformations were applied to the white matter (WM), grey matter (GM), and cerebrospinal fluid (CSF) segmentation maps.
