@@ -18,8 +18,9 @@ RUN pip3 install flywheel-gear-toolkit && \
     pip3 install --upgrade flywheel-sdk
 
 # Configure entrypoint
-RUN bash -c 'chmod +rx $FLYWHEEL/run.py' && \
-    bash -c 'chmod +rx $FLYWHEEL/app/' 
+RUN bash -c 'chmod +wrx $FLYWHEEL/run.py' && \
+    bash -c 'chmod +wrx $FLYWHEEL/app/*' && \
+    bash -c 'chmod +wrx $FLYWHEEL/utils/*'
     
 ENTRYPOINT ["python3","/flywheel/v0/run.py"] 
 # Flywheel reads the config command over this entrypoint
