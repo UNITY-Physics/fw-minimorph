@@ -114,8 +114,7 @@ def SegQC(input_image_path, subj):
         # Create an animated GIF for this plane
         frames = [reference_image.convert('RGB'), registered_image.convert('RGB')]
 
-        # gif_image_path = os.path.join(overlay_dir, f'{subj}_{plane}.gif')
-        gif_image_path = (f'./{subj}_{plane}.gif')
+        gif_image_path = os.path.join(overlay_dir, f'{subj}_{plane}.gif')
 
         # Save frames as an animated GIF
         frames[0].save(gif_image_path, format='GIF', append_images=frames[1:], save_all=True, duration=500, loop=0)
@@ -133,20 +132,18 @@ def SegQC(input_image_path, subj):
         f.write('<html><body>\n')
         f.write('<style>table {border-collapse: collapse;} td {padding: 5px;}</style>\n')
         f.write('<table>\n')
-        for subj, planes_dict in gif_images.items():
-            f.write('<tr>\n')
-            f.write(f'<td colspan="3" style="text-align:center;"><h2>{subj}</h2></td>\n')
-            f.write('</tr>\n')
-            f.write('<tr>\n')
-            for plane in ['axial', 'coronal', 'sagittal']:
-                gif_path = planes_dict.get(plane)
-                if (gif_path):
-                    f.write(f'<td style="text-align:center;">\n')
-                    f.write(f'<img src="{os.path.basename(gif_path)}" alt="{subj} {plane}"><br>\n')
-                    f.write(f'<b>{plane.capitalize()}</b>\n')
-                    f.write('</td>\n')
-            f.write('</tr>\n')
-            f.write('<tr><td colspan="3"><hr></td></tr>\n')
+        # for subj, planes_dict in gif_images.items():
+        f.write('<tr>\n')
+        f.write(f'<td colspan="3" style="text-align:center;"><h2>{subj}</h2></td>\n')
+        f.write('</tr>\n')
+        f.write('<tr>\n')
+        for plane in ['axial', 'coronal', 'sagittal']:
+                f.write(f'<td style="text-align:center;">\n')
+                f.write(f'<img src="./{subj}_{plane}.gif" alt="{subj} {plane}"><br>\n')
+                f.write(f'<b>{plane.capitalize()}</b>\n')
+                f.write('</td>\n')
+        f.write('</tr>\n')
+        f.write('<tr><td colspan="3"><hr></td></tr>\n')
         f.write('</table>\n')
         f.write('</body></html>')
 

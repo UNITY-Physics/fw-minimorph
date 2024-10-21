@@ -126,12 +126,9 @@ def housekeeping(demo):
 
     cleaned_string = demo['acquisition'].values[0]
     filePath = '/flywheel/v0/work/All_volumes.csv'
-    volumes = pd.read_csv(filePath, sep='\s', engine='python')
-    # sep='\t', delim_whitespace=True,
-    # smush the data together
-    frames = [demo, volumes]
-    df = pd.concat(frames, axis=1)
+    volumes = pd.read_csv(filePath, sep='\s+', index_col=False, engine='python')
+    df = pd.concat([demo.reset_index(drop=True), volumes.reset_index(drop=True)], axis=1)
     out_name = f"{cleaned_string}_volumes.csv"
     outdir = ('/flywheel/v0/output/' + out_name)
-    df.to_csv(outdir)
+    df.to_csv(outdir, index=False)
 
