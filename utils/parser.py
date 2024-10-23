@@ -25,11 +25,26 @@ def parse_config(
     input = gear_context.get_input_path("input")
     age = gear_context.config.get("age")
 
-    if age is None:
-        warnings.warn("WARNING!!! Age is not provided in the config.json file", UserWarning)
-        print("Checking for age in dicom headers...")
-        age = demographics['dicom_age_in_months'].values[0]
-        print("dicom_age_in_months: ", age)
+    if age == "None":
+        # warnings.warn("WARNING!!! Age is not provided in the config.json file", UserWarning)
+        print("WARNING!!! Age is not provided in the config.json file. Checking for age in dicom headers...")
+        age_demo = demographics['dicom_age_in_months'].values[0]
+        print("dicom_age_in_months: ", age_demo)
+        age_demo = age_demo.replace('M', '') 
+        age_demo = int(age_demo)  
+
+        if age_demo < 5:
+            age = '3M'
+        elif age_demo < 10:
+            age = '6M'
+        elif age_demo < 16:
+            age = '12M'       
+        elif age_demo < 22:
+            age = '18M'        
+        elif age_demo < 30:
+            age = '24M'
+
+
     else:
         ValueError("Age is not provided in config.json file or dicom headers")
 

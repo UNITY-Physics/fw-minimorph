@@ -207,7 +207,7 @@ pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg3.png ${OUTPUT_DIR}
 # Extract volumes of segmentations
 output_csv=${WORK_DIR}/All_volumes.csv
 # Initialize the master CSV file with headers
-echo "template_age total_tissue_volume total_csf_volume tissue_non_sub_GM_non_cerebellum csf_non_ventricles ventricles skull cerebellum tmp posterior_callosum mid_posterior_callosum central_callosum mid_anterior_callosum anterior_callosum left_thalamus left_caudate left_putamen left_globus_pallidus right_thalamus right_caudate right_putamen right_globus_pallidus icv" > "$output_csv"
+echo "template_age total_tissue_volume total_csf_volume tissue_non_sub_GM_non_cerebellum csf_non_ventricles ventricles skull cerebellum posterior_callosum mid_posterior_callosum central_callosum mid_anterior_callosum anterior_callosum left_thalamus left_caudate left_putamen left_globus_pallidus right_thalamus right_caudate right_putamen right_globus_pallidus icv" > "$output_csv"
 
 atlas=${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
 # atlas=${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz

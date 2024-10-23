@@ -75,7 +75,7 @@ def demo(context):
                     except:
                         PatientSex = "NA"
                         continue
-                    print("PatientSex: ", PatientSex)
+                    print("Patient Sex: ", PatientSex)
 
                     if 'PatientBirthDate' in dicom_header.info:
                         # Get dates from dicom header
@@ -109,14 +109,14 @@ def demo(context):
                     # # Make sure age is positive
                     # elif age < 0:
                     #     age = age * -1
-                    print("age in months: ", age_in_months)
+                    # print("age in months: ", age_in_months)
     
     age_in_months = str(age_in_months) + "M"
     # assign values to lists. 
     data = [{'subject': subject_label, 'session': session_label, 'dicom_age_in_months': age_in_months, 'sex': PatientSex, 'acquisition': cleaned_string }]  
     # Creates DataFrame.  
     demo = pd.DataFrame(data)
-    print("Demographics: ", subject_label, session_label, age, PatientSex)
+    print("Demographics: ", subject_label, session_label, age_in_months, PatientSex)
 
     return demo
 
