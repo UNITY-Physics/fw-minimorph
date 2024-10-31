@@ -31,7 +31,10 @@ def parse_config(
         age_demo = demographics['dicom_age_in_months'].values[0]
         print("dicom_age_in_months: ", age_demo)
         age_demo = age_demo.replace('M', '') 
-        age_demo = int(age_demo)  
+        try:
+            age_demo = int(float(age_demo))
+        except ValueError:
+            print("Invalid input for age_demo. Please provide a numeric value.")  
 
         if age_demo < 5:
             age = '3M'
