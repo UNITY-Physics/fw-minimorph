@@ -10,7 +10,11 @@ import os
 
 def demo(context):
 
+    # Initialize variables
     data = []
+    age_in_months = 'NA'
+    PatientSex = 'NA'
+    
     # Read config.json file
     p = open('/flywheel/v0/config.json')
     config = json.loads(p.read())
@@ -38,6 +42,13 @@ def demo(context):
     session_label = session.label
     print("session label: ", session.label)
     
+    try:
+        age_in_months = session.info['age_months']
+        print("Age in months provided in session info")
+        print("Age in months: ", age_in_months)
+    except:
+        print("No age in months in session info")
+        pass
 
     # -------------------  Get Acquisition label -------------------  #
 
@@ -59,8 +70,7 @@ def demo(context):
     # get the T2w axi dicom acquisition from the session
     # Should contain the DOB in the dicom header
     # Some projects may have DOB removed, but may have age at scan in the subject container
-    age_in_months = 'NA'
-    PatientSex = 'NA'
+
     for acq in session_container.acquisitions.iter():
         # print(acq.label)
         acq = acq.reload()
@@ -77,39 +87,75 @@ def demo(context):
                         continue
                     print("Patient Sex: ", PatientSex)
 
-                    if 'PatientBirthDate' in dicom_header.info:
-                        # Get dates from dicom header
-                        dob = dicom_header.info['PatientBirthDate']
-                        seriesDate = dicom_header.info['SeriesDate']
-                        # Calculate age at scan
-                        age = (datetime.strptime(seriesDate, '%Y%m%d')) - (datetime.strptime(dob, '%Y%m%d'))
-                        age_in_days = age.days
-                        age_in_months = int(age_in_days / 30.44)
-                    elif session.age != None: 
-                        # 
-                        print("Checking session infomation label...")
-                        # print("session.age: ", session.age) 
-                        age_in_days = int(session.age / 365 / 24 / 60 / 60) # This is in seconds
-                        age_in_months = int(age_in_days / 30.44)
-                    elif 'PatientAge' in dicom_header.info:
-                        print("No DOB in dicom header or age in session info! Trying PatientAge from dicom...")
-                        age = dicom_header.info['PatientAge']
-                        # Need to drop the 'D' from the age and convert to int
-                        age = re.sub('\D', '', age)
-                        age_in_days = int(age)
-                        age_in_months = int(age_in_days / 30.44)
-                    else:
-                        print("No age at scan in session info label! Ask PI...")
-                        age_in_months = 0
+                    if age_in_months == 'NA':
+                        print("No age in months in session demographic sync...")
+                        if 'PatientBirthDate' in dicom_header.info:
+                            print("Checking DOB in dicom header...")
+                            try:
+                                dob = dicom_header.info['PatientBirthDate']
+                                seriesDate = dicom_header.info['SeriesDate']
+                                # Validate date format and presence of SeriesDate
+                                if not seriesDate:
+                                    raise ValueError("SeriesDate is missing")
+                                
+                                # Calculate age at scan
+                                age = (datetime.strptime(seriesDate, '%Y%m%d')) - (datetime.strptime(dob, '%Y%m%d'))
+                                age_in_days = age.days
+                                age_in_months = int(age_in_days / 30.44)
+                                
+                                # Sanity check for negative ages or unreasonable values
+                                if age_in_days < 0:
+                                    raise ValueError(f"Invalid age calculation: {age_in_days} days")
+                                    
+                            except ValueError as e:
+                                print(f"Error processing dates: {e}")
+                                raise
 
-                    if age_in_months == 0:
-                        print("No age at scan - skipping")
-                        exit(1)
+                        elif session.age is not None:  # More pythonic than != None
+                            print("Checking session information label...")
+                            try:
+                                # Convert seconds to days more clearly
+                                seconds_per_day = 24 * 60 * 60
+                                age_in_days = int(session.age / seconds_per_day)
+                                age_in_months = int(age_in_days / 30.44)
+                                
+                                # Sanity check
+                                if age_in_days < 0 or age_in_days > 36500:  # 100 years
+                                    raise ValueError(f"Unreasonable age value: {age_in_days} days")
+                                    
+                            except (ValueError, TypeError) as e:
+                                print(f"Error processing session age: {e}")
+                                raise
 
-                    # # Make sure age is positive
-                    # elif age < 0:
-                    #     age = age * -1
-                    # print("age in months: ", age_in_months)
+                        elif 'PatientAge' in dicom_header.info:
+                            print("No DOB in dicom header or age in session info! Trying PatientAge from dicom...")
+                            try:
+                                age = dicom_header.info['PatientAge']
+                                if not age:
+                                    raise ValueError("PatientAge is empty")
+                                    
+                                if age.endswith('M'):
+                                    # Remove leading zeros and 'M', then convert to int
+                                    age_in_months = int(age.rstrip('M').lstrip('0'))
+                                    if age_in_months == 0:
+                                        raise ValueError("Age cannot be 0 months")
+                                    age_in_days = int(age_in_months * 30.44)
+                                else:
+                                    # Original case for days ('D')
+                                    age = re.sub('\D', '', age)
+                                    age_in_days = int(age)
+                                    age_in_months = int(age_in_days / 30.44)
+                                    
+                                # Sanity check
+                                if age_in_days < 0 or age_in_days > 36500:
+                                    raise ValueError(f"Unreasonable age value: {age_in_days} days")
+                                    
+                            except (ValueError, TypeError) as e:
+                                print(f"Error processing DICOM age: {e}")
+                                raise
+                        else:
+                            print("No age at scan in session info label! Ask PI...")
+                            raise ValueError("No valid age information found")
     
     age_in_months = str(age_in_months) + "M"
     # assign values to lists. 
