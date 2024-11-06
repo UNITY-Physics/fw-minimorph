@@ -1,4 +1,4 @@
-# ANTs Tissue Segmentation
+# MiniMORPH: A Morphometry Pipeline for Low-Field MRI in Infants
 
 ## Overview
 
