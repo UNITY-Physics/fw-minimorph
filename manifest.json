@@ -40,7 +40,7 @@
     },
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/ants-segmentation:0.5.0"
+      "image": "flywheel/ants-segmentation:0.5.1"
     },
     "kcl-app-binary": "app/main.sh",
     "kcl-app-modalities": [
@@ -60,7 +60,7 @@
       "non-commercial-use-only": false
     }
   },
-  "description": "This gear uses ANTs to segment the brain into different regions.",
+  "description": "This script is designed to run the ANTs pipeline for segmenting infant brain images on Flywheel. The pipeline consists of the following steps: \n 1. Register segmentation priors (tissue and CSF) and segmentation masks (ventricles, subcortical GM and collosal segments) to native space via an age-specific template \n 2. Segment the input image in template space using ANTs Atropos and fsl",
   "environment": {
     "CONDA_DIR": "/opt/conda",
     "FLYWHEEL": "/flywheel/v0",
@@ -110,5 +110,5 @@
   "name": "ants-segmentation",
   "source": "https://github.com/Nialljb/MiniMORPH",
   "url": "https://github.com/Nialljb/MiniMORPH",
-  "version": "0.5.0"
+  "version": "0.5.1"
 }
