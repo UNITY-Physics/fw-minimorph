@@ -32,6 +32,8 @@ This script is designed to be run as a Flywheel Gear. The script takes two input
 1. The input image to segment
 2. The age of the template to use in months (e.g. 3, 6, 12, 24)
 
+*To run outside of Flywheel, the script can be run as follows:*
+``` copy the app/main.sh script and provide the input image and age of the template to use in months (e.g. 3, 6, 12, 24) as arguments. The path variables in the script should be adjusted to the location of the segmentation priors and masks on your system. Template images and segmentation priors and masks are available from https://www.nitrc.org/projects/uncbcp_4d_atlas/ *```
 
 [FAQ](#faq)
 
