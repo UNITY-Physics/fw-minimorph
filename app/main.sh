@@ -44,7 +44,7 @@ WORK_DIR=$FLYWHEEL_BASE/work
 OUTPUT_DIR=$FLYWHEEL_BASE/output
 TEMPLATE_DIR=$FLYWHEEL_BASE/app/templates/${age}/
 CONTAINER='[flywheel/ants-segmentation]'
-template=${TEMPLATE_DIR}/template_${age}_degibbs.nii.gz
+template=${TEMPLATE_DIR}/template_${age}_degibbs_padded.nii.gz
 
 echo "permissions"
 ls -ltra /flywheel/v0/
@@ -108,9 +108,9 @@ INVERSE_WARP=$(ls ${WORK_DIR}/bet*InverseWarp.nii.gz)
 # Transform priors (template space) to each subject's native space
 echo "Transforming priors to native space for segmentation"
 items=(
-    "${TEMPLATE_DIR}/prior1_scale.nii.gz"
-    "${TEMPLATE_DIR}/prior2_scale.nii.gz"
-    "${TEMPLATE_DIR}/prior3_scale.nii.gz"
+    "${TEMPLATE_DIR}/prior1_scale_padded.nii.gz"
+    "${TEMPLATE_DIR}/prior2_scale_padded.nii.gz"
+    "${TEMPLATE_DIR}/prior3_scale_padded.nii.gz"
 )
 
 for item in "${items[@]}"; do
@@ -126,10 +126,11 @@ done
 # Transform ventricles and subcortical grey matter masks (template space) to each subject's native space
 echo "Transforming masks to native space"
 items=(
-    "${TEMPLATE_DIR}/ventricles_mask.nii.gz"
-    "${TEMPLATE_DIR}/BCP_sub_GM_mask_0.5_resampled_relabelled.nii.gz"
-    "${TEMPLATE_DIR}/cerebellum_mask_relabelled.nii.gz"
-    "${TEMPLATE_DIR}/callosum_mask_relabelled_${age}.nii.gz"
+    "${TEMPLATE_DIR}/ventricles_mask_padded.nii.gz"
+    "${TEMPLATE_DIR}/BCP_sub_GM_mask_synthmorph_relabelled_padded.nii.gz"
+    "${TEMPLATE_DIR}/cerebellum_mask_dilate_clean_padded.nii.gz"
+    "${TEMPLATE_DIR}/callosum_mask_relabelled_padded.nii.gz"
+    "${TEMPLATE_DIR}/brainstem_mask_dilate_clean_padded.nii.gz"
 )
 
 for item in "${items[@]}"; do
@@ -144,21 +145,21 @@ done
 echo -e "\n --- Step 3: Segmenting images --- "
 fslmaths ${native_brain_mask} -dilM ${WORK_DIR}/native_brain_mask_dil.nii.gz
 sync
-antsAtroposN4.sh -d 3 -a ${input_file} -x ${WORK_DIR}/native_brain_mask_dil.nii.gz -p ${WORK_DIR}/prior%d_scale.nii.gz -c 3 -y 1 -y 2 -w 0.3 -o ${WORK_DIR}/ants_atropos_
+antsAtroposN4.sh -d 3 -a ${input_file} -x ${WORK_DIR}/native_brain_mask_dil.nii.gz -p ${WORK_DIR}/prior%d_scale_padded.nii.gz -c 3 -y 1 -y 2 -w 0.3 -o ${WORK_DIR}/ants_atropos_
 sync
 echo -e "\n Past Atropos segmentation step "
 
 sleep 3
 
 # Define posterior images from Atropos segmentation (segmentation in native space with 3 priors)
-Posterior1=${WORK_DIR}/ants_atropos_SegmentationPosteriors1.nii.gz
-Posterior2=${WORK_DIR}/ants_atropos_SegmentationPosteriors2.nii.gz
-Posterior3=${WORK_DIR}/ants_atropos_SegmentationPosteriors3.nii.gz
+Posterior1=${WORK_DIR}/ants_atropos_padded_SegmentationPosteriors1.nii.gz
+Posterior2=${WORK_DIR}/ants_atropos_padded_SegmentationPosteriors2.nii.gz
+Posterior3=${WORK_DIR}/ants_atropos_padded_SegmentationPosteriors3.nii.gz
 
 
 
 #Refine segmentations to extract ventricles
-fslmaths ${Posterior2} -mul ${WORK_DIR}/ventricles_mask.nii.gz ${WORK_DIR}/ventricles_mask_mul
+fslmaths ${Posterior2} -mul ${WORK_DIR}/ventricles_mask_padded.nii.gz ${WORK_DIR}/ventricles_mask_mul
 fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${Posterior1} ${Posterior2} ${WORK_DIR}/ventricles_mask_mul.nii.gz ${Posterior3}
 sync
 fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmean -mul $(fslval ${WORK_DIR}/merged_priors.nii.gz dim4) ${WORK_DIR}/merged_priors_Tsum
@@ -168,25 +169,45 @@ fslmaths ${Posterior2} -sub ${WORK_DIR}/ventricles.nii.gz ${WORK_DIR}/csf
 fslmaths ${native_brain_mask} -mul 0 ${WORK_DIR}/zero_filled_image.nii.gz
 fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${WORK_DIR}/zero_filled_image.nii.gz ${Posterior1} ${WORK_DIR}/csf.nii.gz ${WORK_DIR}/ventricles.nii.gz ${Posterior3}
 sync
-fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmaxn ${OUTPUT_DIR}/atlas_4classes.nii.gz #total tissue, csf, ventricles, skull
+fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmaxn ${OUTPUT_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles, skull
 
 # Short pause of 3 seconds
 sleep 3
 
-#subcortical GM - use BCP sub_GM mask
-fslmaths ${OUTPUT_DIR}/atlas_4classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_sub_GM_mask_0.5_resampled_relabelled.nii.gz ${WORK_DIR}/sub_GM_mask_mul
-fslmaths ${OUTPUT_DIR}/atlas_4classes.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${OUTPUT_DIR}/atlas_5classes.nii.gz #tissue, subcortical GM, csf, ventricles, skull
+
+#Extract subcortical GM
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_sub_GM_mask_0.5_resampled_relabelled_padded.nii.gz ${WORK_DIR}/sub_GM_mask_mul
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${OUTPUT_DIR}/temp_atlas.nii.gz #tissue, subcortical GM, csf, ventricles, skull
 sync
 
-#cerebellum 
-fslmaths ${OUTPUT_DIR}/atlas_5classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/cerebellum_mask_relabelled.nii.gz ${WORK_DIR}/cerebellum_mask_mul
-fslmaths ${OUTPUT_DIR}/atlas_5classes.nii.gz -add ${WORK_DIR}/cerebellum_mask_mul ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz #final atlas
-sync
 
-#callosum
-fslmaths ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled_${age}.nii.gz ${WORK_DIR}/callosum_mask_mul
-fslmaths ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
-sync
+# Extract cerebellum and cerebellum CSF
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 2 -mul ${WORK_DIR}/cerebellum_mask_dilate_clean_padded.nii.gz ${WORK_DIR}/cerebellum_mask_mul
+# Extract cerebellum
+fslmaths ${WORK_DIR}/cerebellum_mask_mul -thr 30 -uthr 30 ${WORK_DIR}/cerebellum.nii.gz
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum ${OUTPUT_DIR}/temp_atlas.nii.gz
+# Extract cerebellum CSF
+fslmaths ${WORK_DIR}/cerebellum_mask_mul -thr 60 -uthr 60 -div 60 -mul 30 ${WORK_DIR}/cerebellum_csf.nii.gz
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum_csf ${OUTPUT_DIR}/temp_atlas.nii.gz
+echo "Atlas with cerebellum created successfully."
+
+#now extract the brainstem and brainstem csf
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 2 -mul ${WORK_DIR}/brainstem_mask_dilate_clean_padded.nii.gz ${WORK_DIR}/brainstem_mask_mul
+# Extract brainstem
+fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 40 -uthr 40 ${WORK_DIR}/brainstem.nii.gz
+fslmaths ${OUTPUT_DIR}/temp_atlas -add ${WORK_DIR}/brainstem ${OUTPUT_DIR}/temp_atlas.nii.gz
+# Extract brainstem CSF
+fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 80 -uthr 80 -div 80 -mul 40 ${WORK_DIR}/brainstem_csf.nii.gz
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/brainstem_csf ${OUTPUT_DIR}/temp_atlas.nii.gz
+echo "Atlas with cerebellum created successfully."
+
+#now extract the callosum
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled_padded.nii.gz ${WORK_DIR}/callosum_mask_mul
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Segmentation_atlas_all_classes.nii.gz
+echo "Atlas with callosum created successfully."
+
+
+
 
 # Short pause of 3 seconds
 sleep 3
