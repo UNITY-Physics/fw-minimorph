@@ -169,7 +169,7 @@ fslmaths ${Posterior2} -sub ${WORK_DIR}/ventricles.nii.gz ${WORK_DIR}/csf
 fslmaths ${native_brain_mask} -mul 0 ${WORK_DIR}/zero_filled_image.nii.gz
 fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${WORK_DIR}/zero_filled_image.nii.gz ${Posterior1} ${WORK_DIR}/csf.nii.gz ${WORK_DIR}/ventricles.nii.gz ${Posterior3}
 sync
-fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmaxn ${OUTPUT_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles, skull
+fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmaxn ${OUTPUT_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles
 
 # Short pause of 3 seconds
 sleep 3
@@ -177,7 +177,7 @@ sleep 3
 
 #Extract subcortical GM
 fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_sub_GM_mask_0.5_resampled_relabelled_padded.nii.gz ${WORK_DIR}/sub_GM_mask_mul
-fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${OUTPUT_DIR}/temp_atlas.nii.gz #tissue, subcortical GM, csf, ventricles, skull
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${OUTPUT_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles, subcortical GM
 sync
 
 
@@ -188,8 +188,10 @@ fslmaths ${WORK_DIR}/cerebellum_mask_mul -thr 30 -uthr 30 ${WORK_DIR}/cerebellum
 fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum ${OUTPUT_DIR}/temp_atlas.nii.gz
 # Extract cerebellum CSF
 fslmaths ${WORK_DIR}/cerebellum_mask_mul -thr 60 -uthr 60 -div 60 -mul 30 ${WORK_DIR}/cerebellum_csf.nii.gz
-fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum_csf ${OUTPUT_DIR}/temp_atlas.nii.gz
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum_csf ${OUTPUT_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles, subcortical GM, cerebellum, cerebellum CSF
 echo "Atlas with cerebellum created successfully."
+
+
 
 #now extract the brainstem and brainstem csf
 fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 2 -mul ${WORK_DIR}/brainstem_mask_dilate_clean_padded.nii.gz ${WORK_DIR}/brainstem_mask_mul
@@ -198,14 +200,15 @@ fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 40 -uthr 40 ${WORK_DIR}/brainstem.n
 fslmaths ${OUTPUT_DIR}/temp_atlas -add ${WORK_DIR}/brainstem ${OUTPUT_DIR}/temp_atlas.nii.gz
 # Extract brainstem CSF
 fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 80 -uthr 80 -div 80 -mul 40 ${WORK_DIR}/brainstem_csf.nii.gz
-fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/brainstem_csf ${OUTPUT_DIR}/temp_atlas.nii.gz
-echo "Atlas with cerebellum created successfully."
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/brainstem_csf ${OUTPUT_DIR}/Final_segmentation_atlas.nii.gz
+echo "Atlas with cerebellum created successfully." #total tissue, csf, ventricles, subcortical GM, cerebellum, cerebellum CSF, brainstem, brainstem CSF
+
+
 
 #now extract the callosum
 fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled_padded.nii.gz ${WORK_DIR}/callosum_mask_mul
-fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Segmentation_atlas_all_classes.nii.gz
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz
 echo "Atlas with callosum created successfully."
-
 
 
 
