@@ -157,9 +157,9 @@ echo -e "\n Past Atropos segmentation step "
 sleep 3
 
 # Define posterior images from Atropos segmentation (segmentation in native space with 3 priors)
-Posterior1=${WORK_DIR}/ants_atropos_padded_SegmentationPosteriors1.nii.gz
-Posterior2=${WORK_DIR}/ants_atropos_padded_SegmentationPosteriors2.nii.gz
-Posterior3=${WORK_DIR}/ants_atropos_padded_SegmentationPosteriors3.nii.gz
+Posterior1=${WORK_DIR}/ants_atropos_SegmentationPosteriors1.nii.gz
+Posterior2=${WORK_DIR}/ants_atropos_SegmentationPosteriors2.nii.gz
+Posterior3=${WORK_DIR}/ants_atropos_SegmentationPosteriors3.nii.gz
 
 
 
