@@ -150,7 +150,7 @@ done
 echo -e "\n --- Step 3: Segmenting images --- "
 fslmaths ${native_brain_mask} -dilM ${WORK_DIR}/native_brain_mask_dil.nii.gz
 sync
-antsAtroposN4.sh -d 3 -a ${input_file} -x ${WORK_DIR}/native_brain_mask_dil.nii.gz -p ${WORK_DIR}/prior%d_scale_padded.nii.gz -c 3 -y 1 -y 2 -w 0.3 -o ${WORK_DIR}/ants_atropos_
+antsAtroposN4.sh -d 3 -a ${input_file} -x ${WORK_DIR}/native_brain_mask_dil.nii.gz -p ${WORK_DIR}/prior%d.nii.gz -c 3 -y 1 -y 2 -w 0.3 -o ${WORK_DIR}/ants_atropos_
 sync
 echo -e "\n Past Atropos segmentation step "
 
@@ -197,8 +197,7 @@ fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum_csf ${OUTPU
 echo "Atlas with cerebellum created successfully."
 
 
-
-#now extract the brainstem and brainstem csf
+#Extract the brainstem and brainstem csf
 fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 2 -mul ${WORK_DIR}/brainstem_mask_dilate_clean_padded.nii.gz ${WORK_DIR}/brainstem_mask_mul
 # Extract brainstem
 fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 40 -uthr 40 ${WORK_DIR}/brainstem.nii.gz
@@ -206,14 +205,14 @@ fslmaths ${OUTPUT_DIR}/temp_atlas -add ${WORK_DIR}/brainstem ${OUTPUT_DIR}/temp_
 # Extract brainstem CSF
 fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 80 -uthr 80 -div 80 -mul 40 ${WORK_DIR}/brainstem_csf.nii.gz
 fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/brainstem_csf ${OUTPUT_DIR}/Final_segmentation_atlas.nii.gz
-echo "Atlas with cerebellum created successfully." #total tissue, csf, ventricles, subcortical GM, cerebellum, cerebellum CSF, brainstem, brainstem CSF
+echo "Atlas with cerebellum created successfully." #Supratentorial tissue, supratentorial csf, ventricles, subcortical GM (left/right caudate, putamen, thalamus, globus pallidus), cerebellum, cerebellum CSF, brainstem, brainstem CSF
 
 
 
 #now extract the callosum
 fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled_padded.nii.gz ${WORK_DIR}/callosum_mask_mul
 fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz
-echo "Atlas with callosum created successfully."
+echo "Atlas with callosum created successfully." #As above but with callosal parcellations added
 
 
 
@@ -224,14 +223,13 @@ sleep 3
 echo -e "\n --- Step 5: Run slicer and extract volume estimation from segmentations --- "
 slicer ${native_bet_image} ${native_bet_image} -a ${WORK_DIR}/slicer_bet.png
 
-slicer ${OUTPUT_DIR}/atlas_4classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg1.png
-pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png ${OUTPUT_DIR}/montage_4_classes.png
+slicer ${OUTPUT_DIR}/Final_segmentation_atlas.nii.gz ${OUTPUT_DIR}/Final_segmentation_atlas.nii.gz -a ${WORK_DIR}/slicer_seg1.png
+pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png ${OUTPUT_DIR}/montage_final_segmentation_atlas.png
 
-slicer ${OUTPUT_DIR}/atlas_5classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg2.png
-pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg2.png ${OUTPUT_DIR}/montage_5_classes.png
+slicer ${OUTPUT_DIR}/Final_segmentation_atlas_with_callosum.nii.gz ${OUTPUT_DIR}/Final_segmentation_atlas_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg1.png
+pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png ${OUTPUT_DIR}/montage_final_segmentation_atlas_with_callosum.png
 
-slicer ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg3.png
-pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg3.png ${OUTPUT_DIR}/montage_all_classes.png
+
 
 # Extract volumes of segmentations
 output_csv=${WORK_DIR}/All_volumes.csv
