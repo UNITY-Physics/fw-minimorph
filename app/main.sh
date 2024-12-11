@@ -162,7 +162,6 @@ Posterior2=${WORK_DIR}/ants_atropos_SegmentationPosteriors2.nii.gz
 Posterior3=${WORK_DIR}/ants_atropos_SegmentationPosteriors3.nii.gz
 
 
-
 #Refine segmentations to extract ventricles
 fslmaths ${Posterior2} -mul ${WORK_DIR}/ventricles_mask_padded.nii.gz ${WORK_DIR}/ventricles_mask_mul
 fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${Posterior1} ${Posterior2} ${WORK_DIR}/ventricles_mask_mul.nii.gz ${Posterior3}
@@ -208,12 +207,10 @@ fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/brainstem_csf ${OUTPUT
 echo "Atlas with cerebellum created successfully." #Supratentorial tissue, supratentorial csf, ventricles, subcortical GM (left/right caudate, putamen, thalamus, globus pallidus), cerebellum, cerebellum CSF, brainstem, brainstem CSF
 
 
-
 #now extract the callosum
 fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled_padded.nii.gz ${WORK_DIR}/callosum_mask_mul
 fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz
 echo "Atlas with callosum created successfully." #As above but with callosal parcellations added
-
 
 
 # Short pause of 3 seconds
@@ -234,32 +231,41 @@ pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png ${OUTPUT_DIR}
 # Extract volumes of segmentations
 output_csv=${WORK_DIR}/All_volumes.csv
 # Initialize the master CSV file with headers
-echo "template_age total_tissue_volume total_csf_volume tissue_non_sub_GM_non_cerebellum csf_non_ventricles ventricles skull cerebellum posterior_callosum mid_posterior_callosum central_callosum mid_anterior_callosum anterior_callosum left_thalamus left_caudate left_putamen left_globus_pallidus right_thalamus right_caudate right_putamen right_globus_pallidus icv" > "$output_csv"
+echo "template_age supratentorial_tissue supratentorial_csf ventricles cerebellum cerebellum_csf brainstem brainstem_csf left_thalamus left_caudate left_putamen left_globus_pallidus right_thalamus right_caudate right_putamen right_globus_pallidus icv" > "$output_csv"
 
-atlas=${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
-# atlas=${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz
+atlas=${OUTPUT_DIR}/Final_segmentation_atlas_with_callosum.nii.gz
 
-# Calculate the volume of voxels that equal 1
-volume_equal_1=$(fslstats ${atlas} -l 0.5 -u 1.5 -V | awk '{print $2}')
-# Calculate the volume of voxels that are above 5.5
-volume_above_5_5=$(fslstats ${atlas} -l 5.5 -V | awk '{print $2}')
-# Sum the above volumes to obtain total tissue volume
-total_tissue_volume=$(echo "$volume_equal_1 + $volume_above_5_5" | bc)
+# Extract volumes for each label
+            supratentorial_general=$(fslstats ${atlas} -l 0.5 -u 1.5 -V | awk '{print $2}')
+            supratentorial_csf=$(fslstats ${atlas} -l 1.5 -u 2.5 -V | awk '{print $2}')
+            ventricles=$(fslstats ${atlas} -l 2.5 -u 3.5 -V | awk '{print $2}')
+            cerebellum=$(fslstats ${atlas} -l 30.5 -u 31.5 -V | awk '{print $2}')
+            cerebellum_csf=$(fslstats ${atlas} -l 31.5 -u 32.5 -V | awk '{print $2}')
+            brainstem=$(fslstats ${atlas} -l 40.5 -u 41.5 -V | awk '{print $2}')
+            brainstem_csf=$(fslstats ${atlas} -l 41.5 -u 42.5 -V | awk '{print $2}')
+            left_thalamus=$(fslstats ${atlas} -l 16.5 -u 17.5 -V | awk '{print $2}')
+            left_caudate=$(fslstats ${atlas} -l 17.5 -u 18.5 -V | awk '{print $2}')
+            left_putamen=$(fslstats ${atlas} -l 18.5 -u 19.5 -V | awk '{print $2}')
+            left_globus_pallidus=$(fslstats ${atlas} -l 19.5 -u 20.5 -V | awk '{print $2}')
+            right_thalamus=$(fslstats ${atlas} -l 26.5 -u 27.5 -V | awk '{print $2}')
+            right_caudate=$(fslstats ${atlas} -l 27.5 -u 28.5 -V | awk '{print $2}')
+            right_putamen=$(fslstats ${atlas} -l 28.5 -u 29.5 -V | awk '{print $2}')
+            right_globus_pallidus=$(fslstats ${atlas} -l 29.5 -u 30.5 -V | awk '{print $2}')
+            posterior_callosum=$(fslstats ${atlas} -l 7.5 -u 8.5 -V | awk '{print $2}')
+            mid_posterior_callosum=$(fslstats ${atlas} -l 8.5 -u 9.5 -V | awk '{print $2}')
+            central_callosum=$(fslstats ${atlas} -l 9.5 -u 10.5 -V | awk '{print $2}')
+            mid_anterior_callosum=$(fslstats ${atlas} -l 10.5 -u 11.5 -V | awk '{print $2}')
+            anterior_callosum=$(fslstats ${atlas} -l 11.5 -u 12.5 -V | awk '{print $2}')
 
-total_csf_volume=$(fslstats ${atlas} -l 1.5 -u 3.5 -V | awk '{print $2}')
+            # Calculate supratentorial tissue volume (include all relevant regions)
+            supratentorial_tissue=$(echo "$supratentorial_general + $left_thalamus + $left_caudate + $left_putamen + $left_globus_pallidus + $right_thalamus + $right_caudate + 	$right_putamen + $right_globus_pallidus + $posterior_callosum + $mid_posterior_callosum + $central_callosum + $mid_anterior_callosum + $anterior_callosum" | bc)
 
-volumes=`fslstats -K ${atlas} ${atlas} -M -V | sed '/missing/d'| awk '{print $3}'`
+            # Calculate ICV
+            icv=$(echo "$supratentorial_tissue + $supratentorial_csf + $cerebellum + $cerebellum_csf + $brainstem + $brainstem_csf" | bc)
 
-# Calculate the volume of voxels below 4
-volume_below_4=$(fslstats ${atlas} -u 3.5 -V | awk '{print $2}')
-# Calculate the volume of voxels above 4
-volume_above_4=$(fslstats ${atlas} -l 4.5 -V | awk '{print $2}')
-# Sum the above volumes to obtain intracranial volume
-icv=$(echo "$volume_below_4 + $volume_above_4" | bc) 
 
-# Assuming these variables are already defined in your script
-# echo "$age,$total_tissue_volume,$total_csf_volume,$volumes,$icv" >> "$output_csv"
-echo $age $total_tissue_volume $total_csf_volume $volumes $icv >> $output_csv
+echo "$template_age $supratentorial_tissue $supratentorial_csf $ventricles $cerebellum $cerebellum_csf $brainstem $brainstem_csf $left_thalamus $left_caudate $left_putamen $left_globus_pallidus $right_thalamus $right_caudate $right_putamen $right_globus_pallidus $posterior_callosum $mid_posterior_callosum,$central_callosum $mid_anterior_callosum $anterior_callosum $icv" >> "$output_csv"
+
 echo "Volumes extracted and saved to $output_csv"
 
 # --- Handle exit status --- #
