@@ -113,9 +113,9 @@ INVERSE_WARP=$(ls ${WORK_DIR}/bet*InverseWarp.nii.gz)
 # Transform priors (template space) to each subject's native space
 echo "Transforming priors to native space for segmentation"
 items=(
-    "${TEMPLATE_DIR}/prior1_scale_padded.nii.gz"
-    "${TEMPLATE_DIR}/prior2_scale_padded.nii.gz"
-    "${TEMPLATE_DIR}/prior3_scale_padded.nii.gz"
+    "${TEMPLATE_DIR}/prior1.nii.gz"
+    "${TEMPLATE_DIR}/prior2.nii.gz"
+    "${TEMPLATE_DIR}/prior3.nii.gz"
 )
 
 for item in "${items[@]}"; do
@@ -180,7 +180,7 @@ sleep 3
 
 
 #Extract subcortical GM
-fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_sub_GM_mask_0.5_resampled_relabelled_padded.nii.gz ${WORK_DIR}/sub_GM_mask_mul
+fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_sub_GM_mask_synthmorph_relabelled_padded.nii.gz ${WORK_DIR}/sub_GM_mask_mul
 fslmaths ${OUTPUT_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${OUTPUT_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles, subcortical GM
 sync
 
