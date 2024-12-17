@@ -5,9 +5,9 @@
 # The gear is run in the bash shell so that you can interact with the container.
 # Assumes that API_KEY is set in the environment and added to config.json.
 
-GEAR=fw-ants-segmentation
-IMAGE=flywheel/ants-segmentation:0.4.5
-LOG=ants-segmentation-0.4.5-671b65fe05bbadeecc7f3916 
+GEAR=fw-minimorph
+IMAGE=flywheel/ants-segmentation:0.5.1
+LOG=ants-segmentation-0.5.1-67518a11481bb60bd3fd13d3 
 
 # Command:
 docker run -it --cpus 6.0 --rm --entrypoint bash\

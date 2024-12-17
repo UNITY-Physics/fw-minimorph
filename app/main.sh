@@ -14,6 +14,11 @@ set -x
 # 4. Refine the resulting segmentation posteriors to separate the ventricles from the remaining CSF, and the subcortical grey matter areas from the rest of the tissue
 # 5. Extract volume estimates from the segmentations
 
+#The Final_segmentation_atlas.nii.gz includes the following labels: supratentorial tissue, supratentorial csf, ventricles, cerebellum, cerebellum csf, brainstem, brainstem_csf, left_thalamus, 
+#left_caudate, left_putamen,	left_globus_pallidus,	right_thalamus,	right_caudate,	right_putamen, right_globus_pallidus
+
+#The Final_segmentation_atlas_with_callosum.nii.gz includes all the labels above, as well as the following callosal parcellations: posterior, mid-posterior, central, mid-anterior, anterior
+
 
 # Usage:
 # This script is designed to be run as a Flywheel Gear. The script takes two inputs:
@@ -44,7 +49,7 @@ WORK_DIR=$FLYWHEEL_BASE/work
 OUTPUT_DIR=$FLYWHEEL_BASE/output
 TEMPLATE_DIR=$FLYWHEEL_BASE/app/templates/${age}/
 CONTAINER='[flywheel/ants-segmentation]'
-template=${TEMPLATE_DIR}/template_${age}_degibbs.nii.gz
+template=${TEMPLATE_DIR}/template_${age}_degibbs_padded.nii.gz
 
 echo "permissions"
 ls -ltra /flywheel/v0/
@@ -108,9 +113,9 @@ INVERSE_WARP=$(ls ${WORK_DIR}/bet*InverseWarp.nii.gz)
 # Transform priors (template space) to each subject's native space
 echo "Transforming priors to native space for segmentation"
 items=(
-    "${TEMPLATE_DIR}/prior1_scale.nii.gz"
-    "${TEMPLATE_DIR}/prior2_scale.nii.gz"
-    "${TEMPLATE_DIR}/prior3_scale.nii.gz"
+    "${TEMPLATE_DIR}/prior1.nii.gz"
+    "${TEMPLATE_DIR}/prior2.nii.gz"
+    "${TEMPLATE_DIR}/prior3.nii.gz"
 )
 
 for item in "${items[@]}"; do
@@ -126,10 +131,11 @@ done
 # Transform ventricles and subcortical grey matter masks (template space) to each subject's native space
 echo "Transforming masks to native space"
 items=(
-    "${TEMPLATE_DIR}/ventricles_mask.nii.gz"
-    "${TEMPLATE_DIR}/BCP_sub_GM_mask_0.5_resampled_relabelled.nii.gz"
-    "${TEMPLATE_DIR}/cerebellum_mask_relabelled.nii.gz"
-    "${TEMPLATE_DIR}/callosum_mask_relabelled_${age}.nii.gz"
+    "${TEMPLATE_DIR}/ventricles_mask_padded.nii.gz"
+    "${TEMPLATE_DIR}/BCP_sub_GM_mask_synthmorph_relabelled_padded.nii.gz"
+    "${TEMPLATE_DIR}/cerebellum_mask_dilate_clean_padded.nii.gz"
+    "${TEMPLATE_DIR}/callosum_mask_relabelled_padded.nii.gz"
+    "${TEMPLATE_DIR}/brainstem_mask_dilate_clean_padded.nii.gz"
 )
 
 for item in "${items[@]}"; do
@@ -144,7 +150,7 @@ done
 echo -e "\n --- Step 3: Segmenting images --- "
 fslmaths ${native_brain_mask} -dilM ${WORK_DIR}/native_brain_mask_dil.nii.gz
 sync
-antsAtroposN4.sh -d 3 -a ${input_file} -x ${WORK_DIR}/native_brain_mask_dil.nii.gz -p ${WORK_DIR}/prior%d_scale.nii.gz -c 3 -y 1 -y 2 -w 0.3 -o ${WORK_DIR}/ants_atropos_
+antsAtroposN4.sh -d 3 -a ${input_file} -x ${WORK_DIR}/native_brain_mask_dil.nii.gz -p ${WORK_DIR}/prior%d.nii.gz -c 3 -y 1 -y 2 -w 0.3 -o ${WORK_DIR}/ants_atropos_
 sync
 echo -e "\n Past Atropos segmentation step "
 
@@ -156,9 +162,8 @@ Posterior2=${WORK_DIR}/ants_atropos_SegmentationPosteriors2.nii.gz
 Posterior3=${WORK_DIR}/ants_atropos_SegmentationPosteriors3.nii.gz
 
 
-
 #Refine segmentations to extract ventricles
-fslmaths ${Posterior2} -mul ${WORK_DIR}/ventricles_mask.nii.gz ${WORK_DIR}/ventricles_mask_mul
+fslmaths ${Posterior2} -mul ${WORK_DIR}/ventricles_mask_padded.nii.gz ${WORK_DIR}/ventricles_mask_mul
 fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${Posterior1} ${Posterior2} ${WORK_DIR}/ventricles_mask_mul.nii.gz ${Posterior3}
 sync
 fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmean -mul $(fslval ${WORK_DIR}/merged_priors.nii.gz dim4) ${WORK_DIR}/merged_priors_Tsum
@@ -168,25 +173,45 @@ fslmaths ${Posterior2} -sub ${WORK_DIR}/ventricles.nii.gz ${WORK_DIR}/csf
 fslmaths ${native_brain_mask} -mul 0 ${WORK_DIR}/zero_filled_image.nii.gz
 fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${WORK_DIR}/zero_filled_image.nii.gz ${Posterior1} ${WORK_DIR}/csf.nii.gz ${WORK_DIR}/ventricles.nii.gz ${Posterior3}
 sync
-fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmaxn ${OUTPUT_DIR}/atlas_4classes.nii.gz #total tissue, csf, ventricles, skull
+fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmaxn ${WORK_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles
 
 # Short pause of 3 seconds
 sleep 3
 
-#subcortical GM - use BCP sub_GM mask
-fslmaths ${OUTPUT_DIR}/atlas_4classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_sub_GM_mask_0.5_resampled_relabelled.nii.gz ${WORK_DIR}/sub_GM_mask_mul
-fslmaths ${OUTPUT_DIR}/atlas_4classes.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${OUTPUT_DIR}/atlas_5classes.nii.gz #tissue, subcortical GM, csf, ventricles, skull
+
+#Extract subcortical GM
+fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_sub_GM_mask_synthmorph_relabelled_padded.nii.gz ${WORK_DIR}/sub_GM_mask_mul
+fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${WORK_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles, subcortical GM
 sync
 
-#cerebellum 
-fslmaths ${OUTPUT_DIR}/atlas_5classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/cerebellum_mask_relabelled.nii.gz ${WORK_DIR}/cerebellum_mask_mul
-fslmaths ${OUTPUT_DIR}/atlas_5classes.nii.gz -add ${WORK_DIR}/cerebellum_mask_mul ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz #final atlas
-sync
 
-#callosum
-fslmaths ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled_${age}.nii.gz ${WORK_DIR}/callosum_mask_mul
-fslmaths ${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
-sync
+# Extract cerebellum and cerebellum CSF
+fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 2 -mul ${WORK_DIR}/cerebellum_mask_dilate_clean_padded.nii.gz ${WORK_DIR}/cerebellum_mask_mul
+# Extract cerebellum
+fslmaths ${WORK_DIR}/cerebellum_mask_mul -thr 30 -uthr 30 ${WORK_DIR}/cerebellum.nii.gz
+fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum ${WORK_DIR}/temp_atlas.nii.gz
+# Extract cerebellum CSF
+fslmaths ${WORK_DIR}/cerebellum_mask_mul -thr 60 -uthr 60 -div 60 -mul 30 ${WORK_DIR}/cerebellum_csf.nii.gz
+fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum_csf ${WORK_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles, subcortical GM, cerebellum, cerebellum CSF
+echo "Atlas with cerebellum created successfully."
+
+
+#Extract the brainstem and brainstem csf
+fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 2 -mul ${WORK_DIR}/brainstem_mask_dilate_clean_padded.nii.gz ${WORK_DIR}/brainstem_mask_mul
+# Extract brainstem
+fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 40 -uthr 40 ${WORK_DIR}/brainstem.nii.gz
+fslmaths ${WORK_DIR}/temp_atlas -add ${WORK_DIR}/brainstem ${WORK_DIR}/temp_atlas.nii.gz
+# Extract brainstem CSF
+fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 80 -uthr 80 -div 80 -mul 40 ${WORK_DIR}/brainstem_csf.nii.gz
+fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/brainstem_csf ${WORK_DIR}/Final_segmentation_atlas.nii.gz
+echo "Atlas with cerebellum created successfully." #Supratentorial tissue, supratentorial csf, ventricles, subcortical GM (left/right caudate, putamen, thalamus, globus pallidus), cerebellum, cerebellum CSF, brainstem, brainstem CSF
+
+
+#now extract the callosum
+fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled_padded.nii.gz ${WORK_DIR}/callosum_mask_mul
+fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz
+echo "Atlas with callosum created successfully." #As above but with callosal parcellations added
+
 
 # Short pause of 3 seconds
 sleep 3
@@ -195,52 +220,60 @@ sleep 3
 echo -e "\n --- Step 5: Run slicer and extract volume estimation from segmentations --- "
 slicer ${native_bet_image} ${native_bet_image} -a ${WORK_DIR}/slicer_bet.png
 
-slicer ${OUTPUT_DIR}/atlas_4classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg1.png
-pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png ${OUTPUT_DIR}/montage_4_classes.png
+slicer ${WORK_DIR}/Final_segmentation_atlas.nii.gz ${WORK_DIR}/Final_segmentation_atlas.nii.gz -a ${WORK_DIR}/slicer_seg1.png
+pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png ${WORK_DIR}/montage_final_segmentation_atlas.png
 
-slicer ${OUTPUT_DIR}/atlas_5classes.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg2.png
-pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg2.png ${OUTPUT_DIR}/montage_5_classes.png
+slicer ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg1.png
+pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png ${WORK_DIR}/montage_final_segmentation_atlas_with_callosum.png
 
-slicer ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz ${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg3.png
-pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg3.png ${OUTPUT_DIR}/montage_all_classes.png
+
 
 # Extract volumes of segmentations
 output_csv=${WORK_DIR}/All_volumes.csv
 # Initialize the master CSV file with headers
-echo "template_age total_tissue_volume total_csf_volume tissue_non_sub_GM_non_cerebellum csf_non_ventricles ventricles skull cerebellum posterior_callosum mid_posterior_callosum central_callosum mid_anterior_callosum anterior_callosum left_thalamus left_caudate left_putamen left_globus_pallidus right_thalamus right_caudate right_putamen right_globus_pallidus icv" > "$output_csv"
+echo "template_age supratentorial_tissue supratentorial_csf ventricles cerebellum cerebellum_csf brainstem brainstem_csf left_thalamus left_caudate left_putamen left_globus_pallidus right_thalamus right_caudate right_putamen right_globus_pallidus icv" > "$output_csv"
 
-atlas=${OUTPUT_DIR}/Segmentation_atlas_all_classes_with_callosum.nii.gz
-# atlas=${OUTPUT_DIR}/Segmentation_atlas_all_classes.nii.gz
+atlas=${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz
 
-# Calculate the volume of voxels that equal 1
-volume_equal_1=$(fslstats ${atlas} -l 0.5 -u 1.5 -V | awk '{print $2}')
-# Calculate the volume of voxels that are above 5.5
-volume_above_5_5=$(fslstats ${atlas} -l 5.5 -V | awk '{print $2}')
-# Sum the above volumes to obtain total tissue volume
-total_tissue_volume=$(echo "$volume_equal_1 + $volume_above_5_5" | bc)
+# Extract volumes for each label
+            supratentorial_general=$(fslstats ${atlas} -l 0.5 -u 1.5 -V | awk '{print $2}')
+            supratentorial_csf=$(fslstats ${atlas} -l 1.5 -u 2.5 -V | awk '{print $2}')
+            ventricles=$(fslstats ${atlas} -l 2.5 -u 3.5 -V | awk '{print $2}')
+            cerebellum=$(fslstats ${atlas} -l 30.5 -u 31.5 -V | awk '{print $2}')
+            cerebellum_csf=$(fslstats ${atlas} -l 31.5 -u 32.5 -V | awk '{print $2}')
+            brainstem=$(fslstats ${atlas} -l 40.5 -u 41.5 -V | awk '{print $2}')
+            brainstem_csf=$(fslstats ${atlas} -l 41.5 -u 42.5 -V | awk '{print $2}')
+            left_thalamus=$(fslstats ${atlas} -l 16.5 -u 17.5 -V | awk '{print $2}')
+            left_caudate=$(fslstats ${atlas} -l 17.5 -u 18.5 -V | awk '{print $2}')
+            left_putamen=$(fslstats ${atlas} -l 18.5 -u 19.5 -V | awk '{print $2}')
+            left_globus_pallidus=$(fslstats ${atlas} -l 19.5 -u 20.5 -V | awk '{print $2}')
+            right_thalamus=$(fslstats ${atlas} -l 26.5 -u 27.5 -V | awk '{print $2}')
+            right_caudate=$(fslstats ${atlas} -l 27.5 -u 28.5 -V | awk '{print $2}')
+            right_putamen=$(fslstats ${atlas} -l 28.5 -u 29.5 -V | awk '{print $2}')
+            right_globus_pallidus=$(fslstats ${atlas} -l 29.5 -u 30.5 -V | awk '{print $2}')
+            posterior_callosum=$(fslstats ${atlas} -l 7.5 -u 8.5 -V | awk '{print $2}')
+            mid_posterior_callosum=$(fslstats ${atlas} -l 8.5 -u 9.5 -V | awk '{print $2}')
+            central_callosum=$(fslstats ${atlas} -l 9.5 -u 10.5 -V | awk '{print $2}')
+            mid_anterior_callosum=$(fslstats ${atlas} -l 10.5 -u 11.5 -V | awk '{print $2}')
+            anterior_callosum=$(fslstats ${atlas} -l 11.5 -u 12.5 -V | awk '{print $2}')
 
-total_csf_volume=$(fslstats ${atlas} -l 1.5 -u 3.5 -V | awk '{print $2}')
+            # Calculate supratentorial tissue volume (include all relevant regions)
+            supratentorial_tissue=$(echo "$supratentorial_general + $left_thalamus + $left_caudate + $left_putamen + $left_globus_pallidus + $right_thalamus + $right_caudate + 	$right_putamen + $right_globus_pallidus + $posterior_callosum + $mid_posterior_callosum + $central_callosum + $mid_anterior_callosum + $anterior_callosum" | bc)
 
-volumes=`fslstats -K ${atlas} ${atlas} -M -V | sed '/missing/d'| awk '{print $3}'`
+            # Calculate ICV
+            icv=$(echo "$supratentorial_tissue + $supratentorial_csf + $cerebellum + $cerebellum_csf + $brainstem + $brainstem_csf" | bc)
 
-# Calculate the volume of voxels below 4
-volume_below_4=$(fslstats ${atlas} -u 3.5 -V | awk '{print $2}')
-# Calculate the volume of voxels above 4
-volume_above_4=$(fslstats ${atlas} -l 4.5 -V | awk '{print $2}')
-# Sum the above volumes to obtain intracranial volume
-icv=$(echo "$volume_below_4 + $volume_above_4" | bc) 
 
-# Assuming these variables are already defined in your script
-# echo "$age,$total_tissue_volume,$total_csf_volume,$volumes,$icv" >> "$output_csv"
-echo $age $total_tissue_volume $total_csf_volume $volumes $icv >> $output_csv
+echo "$template_age $supratentorial_tissue $supratentorial_csf $ventricles $cerebellum $cerebellum_csf $brainstem $brainstem_csf $left_thalamus $left_caudate $left_putamen $left_globus_pallidus $right_thalamus $right_caudate $right_putamen $right_globus_pallidus $posterior_callosum $mid_posterior_callosum,$central_callosum $mid_anterior_callosum $anterior_callosum $icv" >> "$output_csv"
+
 echo "Volumes extracted and saved to $output_csv"
 
-# --- Handle exit status --- #
-# Check if the output directory is empty
-if [ -z "$(find "$OUTPUT_DIR" -mindepth 1 -print -quit 2>/dev/null)" ]; then
-    echo "Error: Output directory is empty"
-    exit 1
-fi
+# # --- Handle exit status --- #
+# # Check if the output directory is empty
+# if [ -z "$(find "$OUTPUT_DIR" -mindepth 1 -print -quit 2>/dev/null)" ]; then
+#     echo "Error: Output directory is empty"
+#     exit 1
+# fi
 
 
 

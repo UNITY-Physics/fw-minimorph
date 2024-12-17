@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import sys
+import glob
 
 def SegQC(input_image_path, subj):
 
@@ -17,8 +18,15 @@ def SegQC(input_image_path, subj):
     gif_images = {}  # Key: subject, Value: dict of plane: gif path
 
     print(f'Processing {subj}...')
-    # Path to output image
-    atlas_image_path = os.path.join('/flywheel/v0/output/Segmentation_atlas_all_classes.nii.gz')  # T1
+    # # Path to output image
+    # atlas_image_path = os.path.join('/flywheel/v0/output/Segmentation_atlas_all_classes.nii.gz')  # T1
+
+
+    # Find all files that end with '_segmentation.nii.gz'
+    atlas_image_path = glob.glob(os.path.join(overlay_dir, '*_segmentation.nii.gz'))
+    # Take the first file
+    atlas_image_path = atlas_image_path[0]
+
 
     # Load images
     if not os.path.exists(input_image_path) or not os.path.exists(atlas_image_path):
@@ -114,7 +122,7 @@ def SegQC(input_image_path, subj):
         # Create an animated GIF for this plane
         frames = [reference_image.convert('RGB'), registered_image.convert('RGB')]
 
-        gif_image_path = os.path.join(overlay_dir, f'{subj}_{plane}.gif')
+        gif_image_path = os.path.join(overlay_dir, f'sub-{subj}_{plane}.gif')
 
         # Save frames as an animated GIF
         frames[0].save(gif_image_path, format='GIF', append_images=frames[1:], save_all=True, duration=500, loop=0)
