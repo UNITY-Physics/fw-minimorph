@@ -1,5 +1,9 @@
 # Changelog
 17/12/2024
+Version 1.0.0
+- Cleaned working version of the script
+
+16/12/2024
 Version 0.5.2
 - Included new templates
 - main.sh updated paths for outuput csv
