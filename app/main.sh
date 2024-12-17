@@ -182,6 +182,7 @@ sleep 3
 #Extract subcortical GM
 fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_sub_GM_mask_synthmorph_relabelled_padded.nii.gz ${WORK_DIR}/sub_GM_mask_mul
 fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${WORK_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles, subcortical GM
+echo "Atlas with subcortical GM created successfully."
 sync
 
 
@@ -204,7 +205,7 @@ fslmaths ${WORK_DIR}/temp_atlas -add ${WORK_DIR}/brainstem ${WORK_DIR}/temp_atla
 # Extract brainstem CSF
 fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 80 -uthr 80 -div 80 -mul 40 ${WORK_DIR}/brainstem_csf.nii.gz
 fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/brainstem_csf ${WORK_DIR}/Final_segmentation_atlas.nii.gz
-echo "Atlas with cerebellum created successfully." #Supratentorial tissue, supratentorial csf, ventricles, subcortical GM (left/right caudate, putamen, thalamus, globus pallidus), cerebellum, cerebellum CSF, brainstem, brainstem CSF
+echo "Atlas with brainstem created successfully." #Supratentorial tissue, supratentorial csf, ventricles, subcortical GM (left/right caudate, putamen, thalamus, globus pallidus), cerebellum, cerebellum CSF, brainstem, brainstem CSF
 
 
 #now extract the callosum
