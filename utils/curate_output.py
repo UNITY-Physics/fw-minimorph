@@ -181,7 +181,10 @@ def housekeeping(demo):
     outdir = ('/flywheel/v0/output/' + out_name)
     df.to_csv(outdir, index=False)
 
-
     seg_file = '/flywheel/v0/work/Final_segmentation_atlas_with_callosum.nii.gz'
     new_seg_file = '/flywheel/v0/output/sub-' + sub + '_acq-' + acq + '_segmentation.nii.gz'
     shutil.copy(seg_file, new_seg_file)
+
+    QC_montage = '/flywheel/v0/work/montage_final_segmentation_atlas_with_callosum.png'
+    new_QC_montage = '/flywheel/v0/output/sub-' + sub + '_acq-' + acq + 'QC-montage.png'
+    shutil.copy(QC_montage, new_QC_montage)

@@ -40,7 +40,7 @@
     },
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/minimorph,:0.5.2"
+      "image": "flywheel/minimorph:0.5.3"
     },
     "kcl-app-binary": "app/main.sh",
     "kcl-app-modalities": [
@@ -110,5 +110,5 @@
   "name": "minimorph",
   "source": "https://github.com/Nialljb/MiniMORPH",
   "url": "https://github.com/Nialljb/MiniMORPH",
-  "version": "0.5.2"
+  "version": "0.5.3"
 }
