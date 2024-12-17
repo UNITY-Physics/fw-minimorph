@@ -233,7 +233,7 @@ output_csv=${WORK_DIR}/All_volumes.csv
 # Initialize the master CSV file with headers
 echo "template_age supratentorial_tissue supratentorial_csf ventricles cerebellum cerebellum_csf brainstem brainstem_csf left_thalamus left_caudate left_putamen left_globus_pallidus right_thalamus right_caudate right_putamen right_globus_pallidus icv" > "$output_csv"
 
-atlas=${OUTPUT_DIR}/Final_segmentation_atlas_with_callosum.nii.gz
+atlas=${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz
 
 # Extract volumes for each label
             supratentorial_general=$(fslstats ${atlas} -l 0.5 -u 1.5 -V | awk '{print $2}')

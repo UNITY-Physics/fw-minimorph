@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 import re
 import os
+import shutil
 
 #  Module to identify the correct template use for the subject VBM analysis based on age at scan
 #  Need to get subject identifiers from inside running container in order to find the correct template from the SDK
@@ -170,11 +171,17 @@ def demo(context):
 
 def housekeeping(demo):
 
-    cleaned_string = demo['acquisition'].values[0]
+    acq = demo['acquisition'].values[0]
+    sub = demo['subject'].values[0]
+
     filePath = '/flywheel/v0/work/All_volumes.csv'
-    volumes = pd.read_csv(filePath, sep='\s+', index_col=False, engine='python')
+    volumes = pd.read_csv(filePath, sep='\s+', engine='python') #index_col=False,
     df = pd.concat([demo.reset_index(drop=True), volumes.reset_index(drop=True)], axis=1)
-    out_name = f"{cleaned_string}_volumes.csv"
+    out_name = f"sub-{sub}_acq-{acq}_volumes.csv"
     outdir = ('/flywheel/v0/output/' + out_name)
     df.to_csv(outdir, index=False)
 
+
+    seg_file = '/flywheel/v0/work/Final_segmentation_atlas_with_callosum.nii.gz'
+    new_seg_file = '/flywheel/v0/output/sub-' + sub + '_acq-' + acq + '_segmentation.nii.gz'
+    shutil.copy(seg_file, new_seg_file)
