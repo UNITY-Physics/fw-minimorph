@@ -40,7 +40,7 @@
     },
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/minimorph:1.0.0"
+      "image": "flywheel/minimorph:1.0.1"
     },
     "kcl-app-binary": "app/main.sh",
     "kcl-app-modalities": [
@@ -60,7 +60,7 @@
       "non-commercial-use-only": false
     }
   },
-  "description": "This script is designed to run the ANTs pipeline for segmenting infant brain images on Flywheel. The pipeline consists of the following steps: \n 1. Register segmentation priors (tissue and CSF) and segmentation masks (ventricles, subcortical GM and collosal segments) to native space via an age-specific template \n 2. Segment the input image in template space using ANTs Atropos and fsl",
+  "description": "This script is designed to run the ANTs pipeline for segmenting infant brain images on Flywheel. The pipeline consists of the following steps: \n 1. Register segmentation priors (tissue and CSF) and segmentation masks (ventricles, subcortical GM and collosal segments) to native space via an age-specific template \n 2. Segment the input image in template space using ANTs Atropos and fsl. *Templates included up to 24 months of age*",
   "environment": {
     "CONDA_DIR": "/opt/conda",
     "FLYWHEEL": "/flywheel/v0",
@@ -108,7 +108,7 @@
   "license": "MIT",
   "maintainer": "Niall Bourke <niall.bourke@kcl.ac.uk>",
   "name": "minimorph",
-  "source": "https://github.com/Nialljb/MiniMORPH",
-  "url": "https://github.com/Nialljb/MiniMORPH",
-  "version": "1.0.0"
+  "source": "https://github.com/UNITY-Physics/fw-minimorph",
+  "url": "https://github.com/UNITY-Physics/fw-minimorph",
+  "version": "1.0.1"
 }
