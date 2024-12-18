@@ -1,6 +1,10 @@
 # Changelog
 
 18/12/2024
+
+Version 1.0.2
+- Caught sub- being changed to sub_ in the output csv
+
 Version 1.0.1
 - template_age added to the output csv
 - Missing column headers added to the output csv

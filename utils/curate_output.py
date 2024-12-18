@@ -60,9 +60,10 @@ def demo(context):
         if os.path.isfile(os.path.join(directory_path, filename)):
             filename_without_extension = filename.split('.')[0]
             no_white_spaces = filename_without_extension.replace(" ", "")
-            # no_white_spaces = filename.replace(" ", "")
-            cleaned_string = re.sub(r'[^a-zA-Z0-9]', '_', no_white_spaces)
-            cleaned_string = cleaned_string.rstrip('_') # remove trailing underscore
+            # Exclude "-" from being replaced
+            cleaned_string = re.sub(r'[^a-zA-Z0-9-]', '_', no_white_spaces)
+            cleaned_string = cleaned_string.rstrip('_')  # Remove trailing underscore
+            print(cleaned_string)  # For testing purposes
 
     print("cleaned_string: ", cleaned_string)
 
