@@ -147,7 +147,7 @@ def SegQC(input_image_path, subj):
         f.write('<tr>\n')
         for plane in ['axial', 'coronal', 'sagittal']:
                 f.write(f'<td style="text-align:center;">\n')
-                f.write(f'<img src="./{subj}_{plane}.gif" alt="{subj} {plane}"><br>\n')
+                f.write(f'<img src="./sub-{subj}_{plane}.gif" alt="{subj} {plane}"><br>\n')
                 f.write(f'<b>{plane.capitalize()}</b>\n')
                 f.write('</td>\n')
         f.write('</tr>\n')
