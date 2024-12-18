@@ -6,8 +6,8 @@
 # Assumes that API_KEY is set in the environment and added to config.json.
 
 GEAR=fw-minimorph
-IMAGE=flywheel/ants-segmentation:0.5.1
-LOG=ants-segmentation-0.5.1-67518a11481bb60bd3fd13d3 
+IMAGE=flywheel/minimorph:1.0.0
+LOG=minimorph-1.0.0-6761bfde84a19b503a49dcac 
 
 # Command:
 docker run -it --cpus 6.0 --rm --entrypoint bash\

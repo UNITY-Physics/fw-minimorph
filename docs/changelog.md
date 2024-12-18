@@ -1,4 +1,10 @@
 # Changelog
+
+18/12/2024
+Version 1.0.1
+- template_age added to the output csv
+- Missing column headers added to the output csv
+
 17/12/2024
 Version 1.0.0
 - Cleaned working version of the script
