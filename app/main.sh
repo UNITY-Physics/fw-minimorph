@@ -209,8 +209,8 @@ echo "Atlas with brainstem created successfully." #Supratentorial tissue, suprat
 
 
 #now extract the callosum
-fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled_padded.nii.gz ${WORK_DIR}/callosum_mask_mul
-fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz
+fslmaths ${WORK_DIR}/Final_segmentation_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled_padded.nii.gz ${WORK_DIR}/callosum_mask_mul
+fslmaths ${WORK_DIR}/Final_segmentation_atlas.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz
 echo "Atlas with callosum created successfully." #As above but with callosal parcellations added
 
 
