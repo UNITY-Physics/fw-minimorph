@@ -113,9 +113,9 @@ INVERSE_WARP=$(ls ${WORK_DIR}/bet*InverseWarp.nii.gz)
 # Transform priors (template space) to each subject's native space
 echo "Transforming priors to native space for segmentation"
 items=(
-    "${TEMPLATE_DIR}/prior1_scale.nii.gz"
-    "${TEMPLATE_DIR}/prior2_scale.nii.gz"
-    "${TEMPLATE_DIR}/prior3_scale.nii.gz"
+    "${TEMPLATE_DIR}/prior1_scale_0p55mm.nii.gz"
+    "${TEMPLATE_DIR}/prior2_scale_0p55mm.nii.gz"
+    "${TEMPLATE_DIR}/prior3_scale_0p55mm.nii.gz"
 )
 
 for item in "${items[@]}"; do
@@ -131,7 +131,7 @@ done
 # Transform ventricles and subcortical grey matter masks (template space) to each subject's native space
 echo "Transforming masks to native space"
 items=(
-    "${TEMPLATE_DIR}/ventricles_mask_0p55mm.nii.gz"
+    "${TEMPLATE_DIR}/ventricles_mask_padded_0p55mm.nii.gz"
     "${TEMPLATE_DIR}/BCP_mask_padded_0p55mm.nii.gz"
     "${TEMPLATE_DIR}/cerebellum_mask_dilate_clean_padded_0p55mm.nii.gz"
     "${TEMPLATE_DIR}/callosum_mask_relabelled_padded_0p55mm.nii.gz"
@@ -150,7 +150,7 @@ done
 echo -e "\n --- Step 3: Segmenting images --- "
 fslmaths ${native_brain_mask} -dilM ${WORK_DIR}/native_brain_mask_dil.nii.gz
 sync
-antsAtroposN4.sh -d 3 -a ${input_file} -x ${WORK_DIR}/native_brain_mask_dil.nii.gz -p ${WORK_DIR}/prior%d.nii.gz -c 3 -y 1 -w 0.5 -o ${WORK_DIR}/ants_atropos_
+antsAtroposN4.sh -d 3 -a ${input_file} -x ${WORK_DIR}/native_brain_mask_dil.nii.gz -p ${WORK_DIR}/prior%d_scale_0p55mm.nii.gz -c 3 -y 1 -w 0.5 -o ${WORK_DIR}/ants_atropos_
 sync
 echo -e "\n Past Atropos segmentation step "
 
