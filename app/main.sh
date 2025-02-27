@@ -131,7 +131,7 @@ done
 # Transform ventricles and subcortical grey matter masks (template space) to each subject's native space
 echo "Transforming masks to native space"
 items=(
-    "${TEMPLATE_DIR}/ventricles_mask_padded_0p55mm.nii.gz"
+    "${TEMPLATE_DIR}/ventricles_mask_0p55mm.nii.gz"
     "${TEMPLATE_DIR}/BCP_mask_padded_0p55mm.nii.gz"
     "${TEMPLATE_DIR}/cerebellum_mask_dilate_clean_padded_0p55mm.nii.gz"
     "${TEMPLATE_DIR}/callosum_mask_relabelled_padded_0p55mm.nii.gz"
