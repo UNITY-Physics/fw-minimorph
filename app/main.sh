@@ -163,7 +163,7 @@ Posterior3=${WORK_DIR}/ants_atropos_SegmentationPosteriors3.nii.gz
 
 
 #Refine segmentations to extract ventricles
-fslmaths ${Posterior2} -mul ${WORK_DIR}/ventricles_mask_padded_0p55mm.nii.gz ${WORK_DIR}/ventricles_mask_mul
+fslmaths ${Posterior2} -mul ${WORK_DIR}/ventricles_mask_0p55mm.nii.gz ${WORK_DIR}/ventricles_mask_mul
 fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${Posterior1} ${Posterior2} ${WORK_DIR}/ventricles_mask_mul.nii.gz ${Posterior3}
 sync
 fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmean -mul $(fslval ${WORK_DIR}/merged_priors.nii.gz dim4) ${WORK_DIR}/merged_priors_Tsum
