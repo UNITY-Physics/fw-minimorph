@@ -77,7 +77,7 @@ else
   exit 1
 fi
 
-##############################################################################
+# ##############################################################################
 
 echo -e "\n --- Step 1: Register image to template --- "
 
@@ -135,15 +135,20 @@ items=(
     "${TEMPLATE_DIR}/BCP_mask_padded_0p55mm.nii.gz"
     "${TEMPLATE_DIR}/cerebellum_mask_dilate_clean_padded_0p55mm.nii.gz"
     "${TEMPLATE_DIR}/callosum_mask_relabelled_padded_0p55mm.nii.gz"
-    "${TEMPLATE_DIR}/brainstem_mask_dilate_clean_padded_0p55m.nii.gz"
+    "${TEMPLATE_DIR}/brainstem_mask_dilate_clean_padded_0p55mm.nii.gz"
 )
 
 for item in "${items[@]}"; do
-item_name=$(basename "$item" .nii.gz)
-output_mask="${item_name}.nii.gz"
-antsApplyTransforms -d 3 -i "${item}" -r ${native_bet_image} -o ${WORK_DIR}/"${output_mask}" -n NearestNeighbor -t ["$AFFINE_TRANSFORM",1] -t "${INVERSE_WARP}"
-sync
-echo "$item_name transformed and saved to ${output_mask}"
+  item_name=$(basename "$item" .nii.gz)
+  output_mask="${item_name}.nii.gz"
+  if antsApplyTransforms -d 3 -i "${item}" -r ${native_bet_image} -o ${WORK_DIR}/"${output_mask}" -n NearestNeighbor -t ["$AFFINE_TRANSFORM",1] -t "${INVERSE_WARP}"; then
+    echo "*** Transforming ${item} ***"
+    echo "*** Output: ${WORK_DIR}/"${output_mask}" ***"
+  else
+    echo "Error: Failed to transform ${item}"
+    exit 1
+  fi
+  sync
 done
 
 # Run Atropos
@@ -162,6 +167,7 @@ Posterior2=${WORK_DIR}/ants_atropos_SegmentationPosteriors2.nii.gz
 Posterior3=${WORK_DIR}/ants_atropos_SegmentationPosteriors3.nii.gz
 
 
+echo -e "\n --- Step 4: Hello MDR, time to refine segmentations --- "
 #Refine segmentations to extract ventricles
 fslmaths ${Posterior2} -mul ${WORK_DIR}/ventricles_mask_0p55mm.nii.gz ${WORK_DIR}/ventricles_mask_mul
 fslmerge -t ${WORK_DIR}/merged_priors.nii.gz ${Posterior1} ${Posterior2} ${WORK_DIR}/ventricles_mask_mul.nii.gz ${Posterior3}
@@ -178,47 +184,58 @@ fslmaths ${WORK_DIR}/merged_priors.nii.gz -Tmaxn ${WORK_DIR}/temp_atlas.nii.gz #
 # Short pause of 3 seconds
 sleep 3
 
-
+echo -e "\n --- Step 5: Build the final segmentation atlas --- "
 #Extract subcortical GM
-fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_mask_padded_0p55mm.nii.gz ${WORK_DIR}/sub_GM_mask_mul
-fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${WORK_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles, subcortical GM
-echo "Atlas with subcortical GM created successfully."
+if fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/BCP_mask_padded_0p55mm.nii.gz ${WORK_DIR}/sub_GM_mask_mul && \
+  fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/sub_GM_mask_mul.nii.gz ${WORK_DIR}/temp_atlas.nii.gz; then #total tissue, csf, ventricles, subcortical GM
+  echo "Atlas with subcortical GM created successfully."
+else
+  echo "Error: Failed to create atlas with subcortical GM."
+fi
+
 sync
 
-
+echo "Adding the cerebellum to the atlas..."
 # Extract cerebellum and cerebellum CSF
-fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 2 -mul ${WORK_DIR}/cerebellum_mask_dilate_clean_padded_0p55mm.nii.gz ${WORK_DIR}/cerebellum_mask_mul
-# Extract cerebellum
-fslmaths ${WORK_DIR}/cerebellum_mask_mul -thr 30 -uthr 30 ${WORK_DIR}/cerebellum.nii.gz
-fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum ${WORK_DIR}/temp_atlas.nii.gz
-# Extract cerebellum CSF
-fslmaths ${WORK_DIR}/cerebellum_mask_mul -thr 60 -uthr 60 -div 60 -mul 30 ${WORK_DIR}/cerebellum_csf.nii.gz
-fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum_csf ${WORK_DIR}/temp_atlas.nii.gz #total tissue, csf, ventricles, subcortical GM, cerebellum, cerebellum CSF
-echo "Atlas with cerebellum created successfully."
 
+if fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 2 -mul ${WORK_DIR}/cerebellum_mask_dilate_clean_padded_0p55mm.nii.gz ${WORK_DIR}/cerebellum_mask_mul && \
+  fslmaths ${WORK_DIR}/cerebellum_mask_mul -thr 30 -uthr 30 ${WORK_DIR}/cerebellum.nii.gz && \
+  fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum ${WORK_DIR}/temp_atlas.nii.gz && \
+  fslmaths ${WORK_DIR}/cerebellum_mask_mul -thr 60 -uthr 60 -div 60 -mul 30 ${WORK_DIR}/cerebellum_csf.nii.gz && \
+  fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/cerebellum_csf ${WORK_DIR}/temp_atlas.nii.gz; then
+  echo "Atlas with cerebellum created successfully."
+else
+  echo "Error: Failed to add cerebellum to the atlas."
+fi
 
+echo "Adding the brainstem to the atlas..."
 #Extract the brainstem and brainstem csf
-fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 2 -mul ${WORK_DIR}/brainstem_mask_dilate_clean_padded_0p55m.nii.gz ${WORK_DIR}/brainstem_mask_mul
-# Extract brainstem
-fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 40 -uthr 40 ${WORK_DIR}/brainstem.nii.gz
-fslmaths ${WORK_DIR}/temp_atlas -add ${WORK_DIR}/brainstem ${WORK_DIR}/temp_atlas.nii.gz
-# Extract brainstem CSF
-fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 80 -uthr 80 -div 80 -mul 40 ${WORK_DIR}/brainstem_csf.nii.gz
-fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/brainstem_csf ${WORK_DIR}/Final_segmentation_atlas.nii.gz
-echo "Atlas with brainstem created successfully." #Supratentorial tissue, supratentorial csf, ventricles, subcortical GM (left/right caudate, putamen, thalamus, globus pallidus), cerebellum, cerebellum CSF, brainstem, brainstem CSF
 
+if fslmaths ${WORK_DIR}/temp_atlas.nii.gz -thr 1 -uthr 2 -mul ${WORK_DIR}/brainstem_mask_dilate_clean_padded_0p55mm.nii.gz ${WORK_DIR}/brainstem_mask_mul && \
+  fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 40 -uthr 40 ${WORK_DIR}/brainstem.nii.gz && \
+  fslmaths ${WORK_DIR}/temp_atlas -add ${WORK_DIR}/brainstem ${WORK_DIR}/temp_atlas.nii.gz && \
+  fslmaths ${WORK_DIR}/brainstem_mask_mul -thr 80 -uthr 80 -div 80 -mul 40 ${WORK_DIR}/brainstem_csf.nii.gz && \
+  fslmaths ${WORK_DIR}/temp_atlas.nii.gz -add ${WORK_DIR}/brainstem_csf ${WORK_DIR}/Final_segmentation_atlas.nii.gz; then
+  echo "Atlas with brainstem created successfully." 
+#Supratentorial tissue, supratentorial csf, ventricles, subcortical GM (left/right caudate, putamen, thalamus, globus pallidus), cerebellum, cerebellum CSF, brainstem, brainstem CSF
+else
+  echo "Error: Failed to add brainstem to the atlas."
+fi
 
-#now extract the callosum
-fslmaths ${WORK_DIR}/Final_segmentation_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled_padded_0p55mm.nii.gz ${WORK_DIR}/callosum_mask_mul
-fslmaths ${WORK_DIR}/Final_segmentation_atlas.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz
-echo "Atlas with callosum created successfully." #As above but with callosal parcellations added
-
+echo "Adding the callosum to the atlas..."
+# now extract the callosum
+if fslmaths ${WORK_DIR}/Final_segmentation_atlas.nii.gz -thr 1 -uthr 1 -mul ${WORK_DIR}/callosum_mask_relabelled_padded_0p55mm.nii.gz ${WORK_DIR}/callosum_mask_mul && \
+   fslmaths ${WORK_DIR}/Final_segmentation_atlas.nii.gz -add ${WORK_DIR}/callosum_mask_mul ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz; then
+   echo "Atlas with callosum created successfully." 
+else
+   echo "Error: Failed to create atlas with callosum."
+fi
 
 # Short pause of 3 seconds
 sleep 3
 
 #Slicer for QC
-echo -e "\n --- Step 5: Run slicer and extract volume estimation from segmentations --- "
+echo -e "\n --- Step 6: Run slicer and extract volume estimation from segmentations --- "
 slicer ${native_bet_image} ${native_bet_image} -a ${WORK_DIR}/slicer_bet.png
 
 slicer ${WORK_DIR}/Final_segmentation_atlas.nii.gz ${WORK_DIR}/Final_segmentation_atlas.nii.gz -a ${WORK_DIR}/slicer_seg1.png
@@ -226,7 +243,6 @@ pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png ${WORK_DIR}/m
 
 slicer ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz ${WORK_DIR}/Final_segmentation_atlas_with_callosum.nii.gz -a ${WORK_DIR}/slicer_seg1.png
 pngappend ${WORK_DIR}/slicer_bet.png - ${WORK_DIR}/slicer_seg1.png ${WORK_DIR}/montage_final_segmentation_atlas_with_callosum.png
-
 
 
 # Extract volumes of segmentations
@@ -269,12 +285,6 @@ echo "$age $supratentorial_tissue $supratentorial_csf $ventricles $cerebellum $c
 
 echo "Volumes extracted and saved to $output_csv"
 
-# # --- Handle exit status --- #
-# # Check if the output directory is empty
-# if [ -z "$(find "$OUTPUT_DIR" -mindepth 1 -print -quit 2>/dev/null)" ]; then
-#     echo "Error: Output directory is empty"
-#     exit 1
-# fi
 
 
 
