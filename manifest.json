@@ -41,6 +41,7 @@
     "gear-builder": {
       "category": "analysis",
       "image": "flywheel/minimorph:1.0.6"
+
     },
     "kcl-app-binary": "app/main.sh",
     "kcl-app-modalities": [
