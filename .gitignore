@@ -10,10 +10,9 @@ __pycache__
 
 # Confidential
 config.json
-ants-segmentation-0.0.1-66213f013771258f3fcbc082
-ants-segmentation-0.0.2-6622492e0aa9007ce358b540
 license.txt
 
 # large project files
 app/templates
+app/DEPRICATED_templates
 
