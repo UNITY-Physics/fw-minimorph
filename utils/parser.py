@@ -28,9 +28,9 @@ def parse_config(
     if age == "None":
         # warnings.warn("WARNING!!! Age is not provided in the config.json file", UserWarning)
         print("WARNING!!! Age is not provided in the config.json file. Checking for age in dicom headers...")
-        age_demo = demographics['dicom_age_in_months'].values[0]
-        print("dicom_age_in_months: ", age_demo)
-        age_demo = age_demo.replace('M', '') 
+        age_demo = demographics['age_in_months'].values[0]
+        print("age_in_months: ", age_demo)
+        #age_demo = age_demo.replace('M', '') 
         try:
             age_demo = int(float(age_demo))
         except ValueError:
