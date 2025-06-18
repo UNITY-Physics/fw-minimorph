@@ -5,6 +5,12 @@ from flywheel_gear_toolkit import GearToolkitContext
 from utils.curate_output import demo
 import warnings
 
+
+import logging
+
+
+log = logging.getLogger(__name__)
+
 def parse_config(
     gear_context: GearToolkitContext,
      
@@ -27,14 +33,14 @@ def parse_config(
 
     if age == "None":
         # warnings.warn("WARNING!!! Age is not provided in the config.json file", UserWarning)
-        print("WARNING!!! Age is not provided in the config.json file. Checking for age in dicom headers...")
-        age_demo = demographics['age_in_months'].values[0]
-        print("age_in_months: ", age_demo)
+        log.warning("Age is not provided in the config.json file. Checking for age in dicom headers...")
+        age_demo = demographics['age'].values[0]
+        print("age: ", age_demo)
         #age_demo = age_demo.replace('M', '') 
         try:
             age_demo = int(float(age_demo))
         except ValueError:
-            print("Invalid input for age_demo. Please provide a numeric value.")  
+            log.info("Invalid input for age_demo. Please provide a numeric value.")  
 
         if age_demo < 5:
             age = '3M'

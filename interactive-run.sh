@@ -10,7 +10,7 @@ IMAGE=flywheel/minimorph:$1
 LOG=minimorph-$1-$2
 
 # Command:
-docker run -it --cpus 6.0 --rm --entrypoint bash\
+docker run -it --cpus 6.0 --rm \
 	-v $3/unity/fw-gears/${GEAR}/app/:/flywheel/v0/app\
 	-v $3/unity/fw-gears/${GEAR}/utils:/flywheel/v0/utils\
 	-v $3/unity/fw-gears/${GEAR}/run.py:/flywheel/v0/run.py\

@@ -6,8 +6,23 @@ import re
 import os
 import shutil
 
+import logging
+
+
+log = logging.getLogger(__name__)
+
+
 #  Module to identify the correct template use for the subject VBM analysis based on age at scan
 #  Need to get subject identifiers from inside running container in order to find the correct template from the SDK
+def find_gear_version(analyses, filename):
+    for asys in analyses:
+        for file in asys.files:
+            if file.name == filename:
+                if 'gambas' in asys.label:
+                    return asys.label.split(' ')[0]
+                elif 'mrr' in asys.label:
+                    return f"{file.gear_info.name}/{file.gear_info.version}"
+    return None
 
 def demo(context):
 
@@ -32,7 +47,7 @@ def demo(context):
     subject_id = input_container.parents['subject']
     subject_container = context.client.get(subject_id)
     subject = subject_container.reload()
-    print("subject label: ", subject.label)
+    log.info(f"subject label: {subject.label}")
     subject_label = subject.label
 
     # Get the session id from the input file id
@@ -41,12 +56,13 @@ def demo(context):
     session_container = context.client.get(session_id)
     session = session_container.reload()
     session_label = session.label
-    print("session label: ", session.label)
+    log.info(f"session label: {session.label}")
     
     # -------------------  Get Acquisition label -------------------  #
 
     # Specify the directory you want to list files from
     directory_path = '/flywheel/v0/input/input'
+    gear_v = 'NA'
     # List all files in the specified directory
     for filename in os.listdir(directory_path):
         if os.path.isfile(os.path.join(directory_path, filename)):
@@ -55,17 +71,18 @@ def demo(context):
             # no_white_spaces = filename.replace(" ", "")
             acquisition_cleaned = re.sub(r'[^a-zA-Z0-9]', '_', no_white_spaces)
             acquisition_cleaned = acquisition_cleaned.rstrip('_') # remove trailing underscore
+             # default value for gear version
+            #look for the file and the mrr/gambas version associated with it
 
-            #look for the file and the mrr version associated with it
-            for asys in session.analyses:
-                
-                for file in asys.files:
-                    if file.name == filename:
-                        if 'gambas' in asys.label:
-                            gear_v = asys.label.split(' ')[0]
-                        else:
-                            gear_v = file.gear_info.name + "/" + file.gear_info.version
+            gear_v = find_gear_version(session.analyses, filename)
 
+            if not gear_v:
+                for acq in session.acquisitions():
+                    acq = acq.reload()
+                    gear_v = find_gear_version(acq.analyses, filename)
+                    if gear_v:
+                        break
+                    
     # -------------------  Get the subject age & matching template  -------------------  #
 
     # get the T2w axi dicom acquisition from the session
@@ -86,9 +103,10 @@ def demo(context):
                         sex = dicom_header.info.get("PatientSex",session.info.get('sex_at_birth', "NA"))
                         dob = dicom_header.info.get('PatientBirthDate', None)
                         series_date = dicom_header.get('SeriesDate', None)
+                        scannerSoftwareVersion = dicom_header.info.get('SoftwareVersions', None)
 
                         if session.info.get('age_at_scan_months', 0) != 0:
-                                print("Checking session info for age at scan in months...")
+                                log.info("Checking session info for age at scan in months...")
                                 age_in_months = float(session.info.get('age_at_scan_months', 0))
 
 
@@ -105,9 +123,11 @@ def demo(context):
                                 age_in_months -= 1
                         
                         else:
-                            print("No DOB in dicom header or age in session info! Trying PatientAge from dicom...")
+                            log.info("No DOB in dicom header or age in session info! Trying PatientAge from dicom...")
                             # Need to drop the 'D' from the age and convert to int
                             age_in_months = re.sub('\D', '', dicom_header.info.get('PatientAge', "0"))
+                            log.info(f"PatientAge from dicom: {age_in_months} months")
+                            age_in_months = int(age_in_months)
                         
                         
                         if age_in_months <= 0 or age_in_months > 1200:  # negative, 0 or 100 years
@@ -115,15 +135,15 @@ def demo(context):
                             raise ValueError(f"Invalid age value: {age_in_months} months")
                         
                     except ValueError as e:
-                        print(f"Error processing dates: {e}")
+                        log.error(f"Error processing dates: {e}")
                         raise
     
     #age_in_months = str(age_in_months) + "M"
     # assign values to lists. 
-    data = [{'subject': subject_label, 'session': session_label, 'age': age_in_months, 'sex': sex, 'acquisition': acquisition_cleaned , "input_gear_v": gear_v }]  
+    data = [{'subject': subject_label, 'session': session_label, 'age': age_in_months, 'sex': sex, 'acquisition': acquisition_cleaned , "input_gear_v": gear_v, "scannerSoftwareVersion": scannerSoftwareVersion }]  
     # Creates DataFrame.  
     demo = pd.DataFrame(data)
-    print("Demographics: ", subject_label, session_label, age_in_months, sex)
+    log.info(f"Demographics:  {subject_label} {session_label} {str(age_in_months)} {sex}")
 
     return demo
 
