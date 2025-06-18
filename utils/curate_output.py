@@ -120,7 +120,7 @@ def demo(context):
     
     #age_in_months = str(age_in_months) + "M"
     # assign values to lists. 
-    data = [{'subject': subject_label, 'session': session_label, 'age_in_months': age_in_months, 'sex': sex, 'acquisition': acquisition_cleaned , "input_gear_v": gear_v }]  
+    data = [{'subject': subject_label, 'session': session_label, 'age': age_in_months, 'sex': sex, 'acquisition': acquisition_cleaned , "input_gear_v": gear_v }]  
     # Creates DataFrame.  
     demo = pd.DataFrame(data)
     print("Demographics: ", subject_label, session_label, age_in_months, sex)
