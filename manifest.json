@@ -40,7 +40,7 @@
     },
     "gear-builder": {
       "category": "analysis",
-      "image": "flywheel/minimorph:1.0.8"
+      "image": "flywheel/minimorph:1.0.9"
     },
     "kcl-app-binary": "app/main.sh",
     "kcl-app-modalities": [
@@ -104,5 +104,5 @@
   "name": "minimorph",
   "source": "https://github.com/UNITY-Physics/fw-minimorph",
   "url": "https://github.com/UNITY-Physics/fw-minimorph",
-  "version": "1.0.8"
+  "version": "1.0.9"
 }

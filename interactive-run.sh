@@ -13,6 +13,7 @@ LOG=minimorph-$1-$2
 docker run -it --cpus 6.0 --rm \
 	-v $3/unity/fw-gears/${GEAR}/app/:/flywheel/v0/app\
 	-v $3/unity/fw-gears/${GEAR}/utils:/flywheel/v0/utils\
+	-v $3/unity/fw-gears/${GEAR}/shared/utils:/flywheel/v0/shared/utils\
 	-v $3/unity/fw-gears/${GEAR}/run.py:/flywheel/v0/run.py\
 	-v $3/unity/fw-gears/${GEAR}/${LOG}/input:/flywheel/v0/input\
 	-v $3/unity/fw-gears/${GEAR}/${LOG}/output:/flywheel/v0/output\

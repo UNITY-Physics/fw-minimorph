@@ -7,7 +7,9 @@ import os
 from flywheel_gear_toolkit import GearToolkitContext
 from utils.parser import parse_config
 from utils.command_line import exec_command
-from utils.curate_output import housekeeping
+
+from utils.join_data import housekeeping
+
 from utils.Inspect_segmentations import SegQC
 
 # from utils.parseOutput import parseOutput

@@ -2,7 +2,9 @@
 
 from typing import Tuple
 from flywheel_gear_toolkit import GearToolkitContext
-from utils.curate_output import demo
+# from utils.curate_output import demo
+from shared.utils.curate_output import demo
+
 import warnings
 
 
