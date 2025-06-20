@@ -85,7 +85,8 @@
     "MINC_LIB_DIR": "/usr/local/freesurfer/mni/lib",
     "MNI_DATAPATH": "/usr/local/freesurfer/mni/data",
     "FREESURFER": "/usr/local/freesurfer",
-    "_": "/usr/bin/printenv"
+    "_": "/usr/bin/printenv",
+    "PYTHONPATH": "/flywheel/v0:"
   },
   "inputs": {
     "api-key": {
