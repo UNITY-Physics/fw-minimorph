@@ -27,38 +27,42 @@ def parse_config(
         app_options: options to pass to the app
     """
     # Gather demographic data from the session
-    print("pulling demographics...")
+    log.info("Pulling demographics...")
     demographics = demo(gear_context)
 
-    print("Running parse_config...")
+    log.info("Running parse_config...")
 
     input = gear_context.get_input_path("input")
     age = gear_context.config.get("age")
-
-    if age == "None":
-        # warnings.warn("WARNING!!! Age is not provided in the config.json file", UserWarning)
+    age_template = None
+    if age == "None" or age is None:
         log.warning("Age is not provided in the config.json file. Checking for age in dicom headers...")
         age_demo = demographics['age'].values[0]
-        print("age: ", age_demo)
+        log.info(f"Age from demographics:  {age_demo}")
         #age_demo = age_demo.replace('M', '') 
         try:
-            age_demo = int(float(age_demo))
-        except ValueError:
-            log.info("Invalid input for age_demo. Please provide a numeric value.")  
+            age_demo = float(age_demo)
+            if age_demo < 5:
+                age_template = '3M'
+            elif age_demo < 10:
+                age_template = '6M'
+            elif age_demo < 16:
+                age_template = '12M'       
+            elif age_demo < 22:
+                age_template = '18M'        
+            elif age_demo < 30:
+                age_template = '24M'
 
-        if age_demo < 5:
-            age = '3M'
-        elif age_demo < 10:
-            age = '6M'
-        elif age_demo < 16:
-            age = '12M'       
-        elif age_demo < 22:
-            age = '18M'        
-        elif age_demo < 30:
-            age = '24M'
-
-
+        except ValueError as ve:
+            print(f"Caught a ValueError: {ve}")
+        except TypeError as te:
+            print(f"Caught a TypeError: {te}")
+        except Exception as e:
+            print(f"Caught a general exception: {e}")
+            
     else:
+        age_template = None
         ValueError("Age is not provided in config.json file or dicom headers")
+        
 
-    return input, age, demographics
+    return input, age_template, demographics
