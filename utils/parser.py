@@ -33,15 +33,16 @@ def parse_config(
     log.info("Running parse_config...")
 
     input = gear_context.get_input_path("input")
-    age = gear_context.config.get("age")
-    age_template = None
-    if age == "None" or age is None:
+    age_template = gear_context.config.get("age")
+   
+    if age_template == "None" or age_template is None:
         log.warning("Age is not provided in the config.json file. Checking for age in dicom headers...")
         age_demo = demographics['age'].values[0]
         log.info(f"Age from demographics:  {age_demo}")
         #age_demo = age_demo.replace('M', '') 
         try:
             age_demo = float(age_demo)
+            print(age_demo, type(age_demo))
             if age_demo < 5:
                 age_template = '3M'
             elif age_demo < 10:
@@ -52,6 +53,9 @@ def parse_config(
                 age_template = '18M'        
             elif age_demo < 30:
                 age_template = '24M'
+            else:
+                age_template = None
+                ValueError("Age is not provided in config.json file or dicom headers")
 
         except ValueError as ve:
             print(f"Caught a ValueError: {ve}")
@@ -59,10 +63,7 @@ def parse_config(
             print(f"Caught a TypeError: {te}")
         except Exception as e:
             print(f"Caught a general exception: {e}")
+    
             
-    else:
-        age_template = None
-        ValueError("Age is not provided in config.json file or dicom headers")
-        
-
+    print("Age template is: ", age_template)
     return input, age_template, demographics
