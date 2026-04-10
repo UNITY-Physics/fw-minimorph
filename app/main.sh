@@ -110,26 +110,26 @@ echo -e "\n Run SyN registration"
 #antsRegistrationSyN.sh -d 3 -t 's' -f ${template} -m ${native_bet_image} -j 1 -p 'f' -o ${WORK_DIR}/bet_ -n 4
 
 #Optimized registration step
-antsRegistration -d 3 --float 1 \ 
---output [${WORK_DIR}/bet_,${WORK_DIR}/bet_Warped.nii.gz] \ 
---use-histogram-matching 1 \ 
---initial-moving-transform [${template},${native_bet_image},1] \ 
---transform Rigid[0.1] \ 
---metric MI[${template},${native_bet_image},1,64,Regular,0.25] \ 
---convergence [1000x1000x500x250,1e-6,10] \ 
---shrink-factors 8x6x4x2 \ 
---smoothing-sigmas 4x3x2x1mm \ 
---transform Affine[0.1] \ 
---metric MI[${template},${native_bet_image},1,64,Regular,0.25] \ 
---convergence [1000x1000x500x250,1e-6,10] \ 
---shrink-factors 8x6x4x2 \ 
---smoothing-sigmas 4x3x2x1mm \ 
---transform SyN[0.1, 3, 0] \ 
---metric CC[${template},${native_bet_image},1,4] \ 
---convergence [100x100x70x50,1e-6,10] \ 
---shrink-factors 6x4x2x1 \ 
---smoothing-sigmas 3x2x1x0mm \ 
---masks [${template_mask},${native_brain_mask}] \ 
+antsRegistration -d 3 --float 1 \
+--output [${WORK_DIR}/bet_,${WORK_DIR}/bet_Warped.nii.gz] \
+--use-histogram-matching 1 \
+--initial-moving-transform [${template},${native_bet_image},1] \
+--transform Rigid[0.1] \
+--metric MI[${template},${native_bet_image},1,64,Regular,0.25] \
+--convergence [1000x1000x500x250,1e-6,10] \
+--shrink-factors 8x6x4x2 \
+--smoothing-sigmas 4x3x2x1mm \
+--transform Affine[0.1] \
+--metric MI[${template},${native_bet_image},1,64,Regular,0.25] \
+--convergence [1000x1000x500x250,1e-6,10] \
+--shrink-factors 8x6x4x2 \
+--smoothing-sigmas 4x3x2x1mm \
+--transform SyN[0.1, 3, 0] \
+--metric CC[${template},${native_bet_image},1,4] \
+--convergence [100x100x70x50,1e-6,10] \
+--shrink-factors 6x4x2x1 \
+--smoothing-sigmas 3x2x1x0mm \
+--masks [${template_mask},${native_brain_mask}] \
 --interpolation BSpline
 
 sync
