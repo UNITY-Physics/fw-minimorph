@@ -110,7 +110,7 @@ echo -e "\n Run SyN registration"
 #antsRegistrationSyN.sh -d 3 -t 's' -f ${template} -m ${native_bet_image} -j 1 -p 'f' -o ${WORK_DIR}/bet_ -n 4
 
 #Optimized registration step
-ants antsRegistration -d 3 --float 1 \ 
+antsRegistration -d 3 --float 1 \ 
 --output [${WORK_DIR}/bet_,${WORK_DIR}/bet_Warped.nii.gz] \ 
 --use-histogram-matching 1 \ 
 --initial-moving-transform [${template},${native_bet_image},1] \ 
@@ -192,7 +192,7 @@ antsAtroposN4.sh -d 3 \
 -a ${input_file} \
 -x ${WORK_DIR}/native_brain_mask_dil.nii.gz \
 -p ${WORK_DIR}/prior%d_scale.nii.gz -c 3 -y 1 -y 2 \
--w 0.3 
+-w 0.3 \
 -r '[0.4,1x1x1]' \
 -o ${WORK_DIR}/ants_atropos_
 sync
